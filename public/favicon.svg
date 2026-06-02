@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#863bff"/>
+      <stop offset="1" stop-color="#5a18d4"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+
+  <!-- confetti -->
+  <rect x="2.5" y="4" width="3.2" height="1.4" rx="0.35" fill="#FFD93D" transform="rotate(-32 4.1 4.7)"/>
+  <circle cx="27.5" cy="5" r="1.3" fill="#53FC18"/>
+  <rect x="24.5" y="9" width="2.8" height="1.2" rx="0.25" fill="#FF6B9D" transform="rotate(38 25.9 9.6)"/>
+  <circle cx="4.5" cy="25.5" r="1.1" fill="#47BFFF"/>
+  <rect x="25.5" y="23.5" width="2.4" height="1.1" rx="0.25" fill="#FFD93D" transform="rotate(-18 26.7 24.05)"/>
+  <circle cx="28" cy="17.5" r="1" fill="#FF9F43"/>
+  <rect x="2" y="13.5" width="2.2" height="1" rx="0.2" fill="#53FC18" transform="rotate(52 3.1 14)"/>
+  <circle cx="6" cy="6.5" r="0.85" fill="#FF6B9D"/>
+  <rect x="26" y="14" width="2" height="0.9" rx="0.2" fill="#47BFFF" transform="rotate(-55 27 14.45)"/>
+
+  <!-- letter K -->
+  <path
+    fill="#fff"
+    d="M8.5 7.5h3.8v7.4L18.8 7.5h4.1l-7.4 8.8L23.2 24.5h-4.3l-6.4-8.3v8.3H8.5V7.5z"
+  />
+</svg>
