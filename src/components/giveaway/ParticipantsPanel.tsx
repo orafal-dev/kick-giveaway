@@ -2,7 +2,50 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Entrant, PendingWinner } from "@/giveaway/giveaway.types";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
+import type { Entrant } from "@/giveaway/giveaway.types";
+
+interface DrawWinnerBlockContext {
+  giveawayStarted: boolean;
+  drawPoolCount: number;
+  entrantsCount: number;
+  isDrawing: boolean;
+  winnersTargetReached: boolean;
+  winnersCount: number;
+}
+
+const getDrawWinnerBlockReason = ({
+  giveawayStarted,
+  drawPoolCount,
+  entrantsCount,
+  isDrawing,
+  winnersTargetReached,
+  winnersCount,
+}: DrawWinnerBlockContext): string | null => {
+  if (!giveawayStarted) {
+    return "Start the giveaway before drawing a winner.";
+  }
+
+  if (isDrawing) {
+    return "A draw is already in progress.";
+  }
+
+  if (winnersTargetReached) {
+    return winnersCount === 1
+      ? "The winner has already been drawn."
+      : `All ${winnersCount} winners have been drawn.`;
+  }
+
+  if (drawPoolCount === 0) {
+    if (entrantsCount === 0) {
+      return "No participants yet. Users can enter via chat.";
+    }
+
+    return "No eligible participants remain in the draw pool.";
+  }
+
+  return null;
+};
 
 interface ParticipantsPanelProps {
   entrants: Entrant[];
@@ -10,13 +53,9 @@ interface ParticipantsPanelProps {
   giveawayStarted: boolean;
   isDrawing: boolean;
   winnersTargetReached: boolean;
-  pendingWinner: PendingWinner | null;
-  countdownSeconds: number;
-  isCountdownActive: boolean;
-  winnerConfirmationEnabled: boolean;
+  winnersCount: number;
   onDrawWinner: () => void;
   onReset: () => void;
-  onManualConfirm: () => void;
 }
 
 export const ParticipantsPanel = ({
@@ -25,32 +64,54 @@ export const ParticipantsPanel = ({
   giveawayStarted,
   isDrawing,
   winnersTargetReached,
-  pendingWinner,
-  countdownSeconds,
-  isCountdownActive,
-  winnerConfirmationEnabled,
+  winnersCount,
   onDrawWinner,
   onReset,
-  onManualConfirm,
 }: ParticipantsPanelProps) => {
+  const drawWinnerBlockReason = getDrawWinnerBlockReason({
+    giveawayStarted,
+    drawPoolCount,
+    entrantsCount: entrants.length,
+    isDrawing,
+    winnersTargetReached,
+    winnersCount,
+  });
+  const isDrawWinnerDisabled = drawWinnerBlockReason !== null;
+
+  const drawWinnerButton = (
+    <Button
+      type="button"
+      onClick={onDrawWinner}
+      disabled={isDrawWinnerDisabled}
+      aria-label="Draw giveaway winner"
+      aria-describedby={
+        drawWinnerBlockReason ? "draw-winner-block-reason" : undefined
+      }
+    >
+      {isDrawing ? "Drawing..." : "Draw Winner"}
+    </Button>
+  );
+
   return (
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
         <CardTitle>Participants ({entrants.length})</CardTitle>
         <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            onClick={onDrawWinner}
-            disabled={
-              !giveawayStarted ||
-              drawPoolCount === 0 ||
-              isDrawing ||
-              winnersTargetReached
-            }
-            aria-label="Draw giveaway winner"
-          >
-            {isDrawing ? "Drawing..." : "Draw Winner"}
-          </Button>
+          {drawWinnerBlockReason ? (
+            <Tooltip>
+              <TooltipTrigger
+                delay={200}
+                render={<span className="inline-flex" tabIndex={0} />}
+              >
+                {drawWinnerButton}
+              </TooltipTrigger>
+              <TooltipPopup id="draw-winner-block-reason" side="bottom">
+                {drawWinnerBlockReason}
+              </TooltipPopup>
+            </Tooltip>
+          ) : (
+            drawWinnerButton
+          )}
           <Button
             type="button"
             variant="secondary"
@@ -62,30 +123,6 @@ export const ParticipantsPanel = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {pendingWinner && winnerConfirmationEnabled ? (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
-            <h3 className="mb-2 font-semibold text-amber-400">
-              Awaiting Confirmation
-            </h3>
-            <p className="mb-3 text-sm text-muted-foreground">
-              Waiting for{" "}
-              <strong className="text-foreground">
-                {pendingWinner.username}
-              </strong>{" "}
-              to chat
-              {isCountdownActive ? ` (${countdownSeconds}s left)` : ""}.
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              onClick={onManualConfirm}
-              aria-label="Manually confirm winner"
-            >
-              OK
-            </Button>
-          </div>
-        ) : null}
-
         <ScrollArea className="max-h-[max(calc(100vh-300px),400px)] rounded-md border border-border p-2">
           <ul className="space-y-2 text-left text-sm">
             {entrants.map((entrant) => (

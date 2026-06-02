@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
-import Confetti from "react-confetti";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { ChannelLanding } from "@/components/giveaway/ChannelLanding";
+import { GiveawayConfetti } from "@/components/giveaway/GiveawayConfetti";
 import { ConnectionBar } from "@/components/giveaway/ConnectionBar";
 import { DrawingOverlay } from "@/components/giveaway/DrawingOverlay";
 import { GiveawaySidebar } from "@/components/giveaway/GiveawaySidebar";
@@ -32,6 +32,7 @@ const isEditableElement = (target: EventTarget | null): boolean => {
 
 function App() {
   const giveaway = useKickGiveaway();
+  const { finalizeDraw } = giveaway;
   const [themeMode, setThemeMode] = useState<ThemeMode>(() =>
     getInitialTheme(),
   );
@@ -75,10 +76,10 @@ function App() {
   });
 
   const handleAnimationComplete = useCallback(
-    (winner: Parameters<typeof giveaway.finalizeDraw>[0]) => {
-      giveaway.finalizeDraw(winner);
+    (winner: Parameters<typeof finalizeDraw>[0]) => {
+      finalizeDraw(winner);
     },
-    [giveaway],
+    [finalizeDraw],
   );
 
   const settingsSidebarProps = {
@@ -94,10 +95,10 @@ function App() {
     return (
       <main className="mx-auto flex min-h-svh w-full max-w-xl flex-col justify-center p-4 md:p-8">
         {giveaway.showConfetti ? (
-          <Confetti
+          <GiveawayConfetti
             width={windowSize.width}
             height={windowSize.height}
-            recycle={false}
+            onComplete={giveaway.handleConfettiComplete}
           />
         ) : null}
         <ChannelLanding
@@ -121,10 +122,10 @@ function App() {
       }
     >
       {giveaway.showConfetti ? (
-        <Confetti
+        <GiveawayConfetti
           width={windowSize.width}
           height={windowSize.height}
-          recycle={false}
+          onComplete={giveaway.handleConfettiComplete}
         />
       ) : null}
 
@@ -165,21 +166,22 @@ function App() {
               giveawayStarted={giveaway.giveawayStarted}
               isDrawing={giveaway.isDrawing}
               winnersTargetReached={giveaway.winnersTargetReached}
-              pendingWinner={giveaway.pendingWinner}
-              countdownSeconds={giveaway.countdownSeconds}
-              isCountdownActive={giveaway.isCountdownActive}
-              winnerConfirmationEnabled={
-                giveaway.settings.winnerConfirmationEnabled
-              }
+              winnersCount={giveaway.settings.winnersCount}
               onDrawWinner={giveaway.handleDrawWinner}
               onReset={giveaway.handleReset}
-              onManualConfirm={giveaway.handleManualConfirm}
             />
 
             <WinnersPanel
               winners={giveaway.winners}
               displayName={giveaway.displayName}
               isDrawing={giveaway.isDrawing}
+              pendingWinner={giveaway.pendingWinner}
+              countdownSeconds={giveaway.countdownSeconds}
+              isCountdownActive={giveaway.isCountdownActive}
+              winnerConfirmationEnabled={
+                giveaway.settings.winnerConfirmationEnabled
+              }
+              onManualConfirm={giveaway.handleManualConfirm}
             />
           </section>
 
@@ -198,6 +200,7 @@ function App() {
           displayName={giveaway.displayName}
           onDisplayChange={giveaway.setDisplayName}
           onComplete={handleAnimationComplete}
+          key={giveaway.drawTarget.userId}
         />
       ) : null}
     </SidebarProvider>

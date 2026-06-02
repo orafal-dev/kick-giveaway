@@ -38,7 +38,8 @@ const createInitialState = () => {
     settings: persisted?.settings ?? { ...DEFAULT_SETTINGS },
     entrants: persisted?.entrants ?? [],
     winners: persisted?.winners ?? [],
-    phase: (persisted?.phase === "connecting" ? "idle" : persisted?.phase) ?? "idle",
+    phase:
+      (persisted?.phase === "connecting" ? "idle" : persisted?.phase) ?? "idle",
     pendingWinner: persisted?.pendingWinner ?? null,
     drawCount: persisted?.drawCount ?? 0,
     isChannelStepComplete: Boolean(persisted?.channelName?.trim()),
@@ -57,7 +58,8 @@ export const useKickGiveaway = () => {
     initial.pendingWinner,
   );
   const [drawCount, setDrawCount] = useState(initial.drawCount);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatus>("idle");
   const [isChannelStepComplete, setIsChannelStepComplete] = useState(
     initial.isChannelStepComplete,
   );
@@ -89,7 +91,10 @@ export const useKickGiveaway = () => {
   const giveawayStartedRef = useRef(giveawayStarted);
   const phaseRef = useRef(phase);
 
-  const channelLabel = useMemo(() => normalizeValue(channelName), [channelName]);
+  const channelLabel = useMemo(
+    () => normalizeValue(channelName),
+    [channelName],
+  );
   const drawPool = useMemo(
     () => getEligibleDrawPool(entrants, winners),
     [entrants, winners],
@@ -130,7 +135,15 @@ export const useKickGiveaway = () => {
       pendingWinner,
       drawCount,
     });
-  }, [channelName, settings, entrants, winners, phase, pendingWinner, drawCount]);
+  }, [
+    channelName,
+    settings,
+    entrants,
+    winners,
+    phase,
+    pendingWinner,
+    drawCount,
+  ]);
 
   useEffect(() => {
     const cleanupIntervalId = setInterval(() => {
@@ -145,10 +158,12 @@ export const useKickGiveaway = () => {
     };
   }, []);
 
-  const confirmWinner = useCallback((username: string, confirmedAt: number | null = Date.now()): void => {
+  const confirmWinner = useCallback(
+    (username: string, confirmedAt: number | null = Date.now()): void => {
       setWinners((previousWinners) => {
         const alreadyRecorded = previousWinners.some(
-          (winner) => normalizeValue(winner.username) === normalizeValue(username),
+          (winner) =>
+            normalizeValue(winner.username) === normalizeValue(username),
         );
 
         if (alreadyRecorded) {
@@ -187,6 +202,17 @@ export const useKickGiveaway = () => {
         setShowConfetti(false);
         confettiTimeoutRef.current = null;
       }, CONFETTI_DURATION_MS);
+    },
+    [],
+  );
+
+  const handleConfettiComplete = useCallback((): void => {
+    if (confettiTimeoutRef.current) {
+      clearTimeout(confettiTimeoutRef.current);
+      confettiTimeoutRef.current = null;
+    }
+
+    setShowConfetti(false);
   }, []);
 
   const seedDevEntrantsIfEnabled = useCallback((): void => {
@@ -257,16 +283,10 @@ export const useKickGiveaway = () => {
     setChannelModeMessage("");
 
     try {
-      const { chatroomId, channelId, followersOnlyMode, subscribersOnlyMode } =
+      const { chatroomId, channelId, subscribersOnlyMode } =
         await fetchKickChannelInfo(channelLabel);
 
       setChannelSubscribersOnly(subscribersOnlyMode);
-
-      if (followersOnlyMode || subscribersOnlyMode) {
-        setChannelModeMessage(
-          "Followers/subscribers-only mode",
-        );
-      }
 
       if (wsRef.current) {
         wsRef.current.disconnect();
@@ -306,11 +326,18 @@ export const useKickGiveaway = () => {
       setConnectionStatus("idle");
       setPhase("idle");
       setErrorMessage(
-        error instanceof Error ? error.message : "Failed to connect to channel.",
+        error instanceof Error
+          ? error.message
+          : "Failed to connect to channel.",
       );
       return false;
     }
-  }, [channelLabel, handleKickMessage, seedDevEntrantsIfEnabled]);
+  }, [
+    channelLabel,
+    giveawayStarted,
+    handleKickMessage,
+    seedDevEntrantsIfEnabled,
+  ]);
 
   const handleStartGiveaway = useCallback(async (): Promise<void> => {
     if (!channelLabel) {
@@ -329,7 +356,12 @@ export const useKickGiveaway = () => {
 
     setPhase("collecting");
     seedDevEntrantsIfEnabled();
-  }, [channelLabel, connectToChannel, connectionStatus, seedDevEntrantsIfEnabled]);
+  }, [
+    channelLabel,
+    connectToChannel,
+    connectionStatus,
+    seedDevEntrantsIfEnabled,
+  ]);
 
   const handleChannelLandingSubmit = useCallback(async (): Promise<void> => {
     if (!channelLabel) {
@@ -394,7 +426,9 @@ export const useKickGiveaway = () => {
     setIsCountdownActive(false);
     setCountdownSeconds(settings.confirmTimeSeconds);
     const nextPhase =
-      connectionStatus === "connected" && giveawayStarted ? "collecting" : "idle";
+      connectionStatus === "connected" && giveawayStarted
+        ? "collecting"
+        : "idle";
     setPhase(nextPhase);
 
     if (nextPhase === "collecting") {
@@ -416,7 +450,10 @@ export const useKickGiveaway = () => {
 
       if (settingsRef.current.winnerConfirmationEnabled) {
         setPendingWinner({ username: winner.username, startedAt: Date.now() });
-        pendingWinnerRef.current = { username: winner.username, startedAt: Date.now() };
+        pendingWinnerRef.current = {
+          username: winner.username,
+          startedAt: Date.now(),
+        };
         setCountdownSeconds(settingsRef.current.confirmTimeSeconds);
         countdownActiveRef.current = true;
         setIsCountdownActive(true);
@@ -464,9 +501,12 @@ export const useKickGiveaway = () => {
     setGiveawayStarted(false);
   }, []);
 
-  const updateSettings = useCallback((partial: Partial<GiveawaySettings>): void => {
-    setSettings((previous) => ({ ...previous, ...partial }));
-  }, []);
+  const updateSettings = useCallback(
+    (partial: Partial<GiveawaySettings>): void => {
+      setSettings((previous) => ({ ...previous, ...partial }));
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!isCountdownActive) {
@@ -523,6 +563,7 @@ export const useKickGiveaway = () => {
     displayName,
     setDisplayName,
     showConfetti,
+    handleConfettiComplete,
     countdownSeconds,
     isCountdownActive,
     giveawayStarted,

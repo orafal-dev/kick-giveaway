@@ -1,18 +1,29 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { WinnerRecord } from "@/giveaway/giveaway.types";
+import type { PendingWinner, WinnerRecord } from "@/giveaway/giveaway.types";
 
 interface WinnersPanelProps {
   winners: WinnerRecord[];
   displayName: string;
   isDrawing: boolean;
+  pendingWinner: PendingWinner | null;
+  countdownSeconds: number;
+  isCountdownActive: boolean;
+  winnerConfirmationEnabled: boolean;
+  onManualConfirm: () => void;
 }
 
 export const WinnersPanel = ({
   winners,
   displayName,
   isDrawing,
+  pendingWinner,
+  countdownSeconds,
+  isCountdownActive,
+  winnerConfirmationEnabled,
+  onManualConfirm,
 }: WinnersPanelProps) => {
   return (
     <Card>
@@ -28,6 +39,30 @@ export const WinnersPanel = ({
             {displayName || "—"}
           </p>
         </div>
+
+        {pendingWinner && winnerConfirmationEnabled ? (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
+            <h3 className="mb-2 font-semibold text-amber-400">
+              Awaiting Confirmation
+            </h3>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Waiting for{" "}
+              <strong className="text-foreground">
+                {pendingWinner.username}
+              </strong>{" "}
+              to chat
+              {isCountdownActive ? ` (${countdownSeconds}s left)` : ""}.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              onClick={onManualConfirm}
+              aria-label="Manually confirm winner"
+            >
+              OK
+            </Button>
+          </div>
+        ) : null}
 
         <ScrollArea className="h-48 rounded-md border border-border p-2">
           <ul className="space-y-2 text-sm">

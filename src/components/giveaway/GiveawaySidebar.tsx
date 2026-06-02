@@ -47,11 +47,6 @@ export const GiveawaySidebar = (props: GiveawaySidebarProps) => {
         >
           {props.giveawayStarted ? "Giveaway Running" : "Start Giveaway"}
         </Button>
-        {!props.giveawayStarted ? (
-          <p className="text-center text-xs text-muted-foreground">
-            Press &quot;Start&quot; to connect to the chat.
-          </p>
-        ) : null}
       </SidebarFooter>
 
       <SidebarRail />
