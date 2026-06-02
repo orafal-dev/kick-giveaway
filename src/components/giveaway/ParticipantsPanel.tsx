@@ -64,9 +64,14 @@ export const ParticipantsPanel = ({
       <CardContent className="space-y-4">
         {pendingWinner && winnerConfirmationEnabled ? (
           <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
-            <h3 className="mb-2 font-semibold text-amber-400">Awaiting Confirmation</h3>
+            <h3 className="mb-2 font-semibold text-amber-400">
+              Awaiting Confirmation
+            </h3>
             <p className="mb-3 text-sm text-muted-foreground">
-              Waiting for <strong className="text-foreground">{pendingWinner.username}</strong>{" "}
+              Waiting for{" "}
+              <strong className="text-foreground">
+                {pendingWinner.username}
+              </strong>{" "}
               to chat
               {isCountdownActive ? ` (${countdownSeconds}s left)` : ""}.
             </p>
@@ -81,7 +86,7 @@ export const ParticipantsPanel = ({
           </div>
         ) : null}
 
-        <ScrollArea className="h-72 rounded-md border border-border p-2">
+        <ScrollArea className="max-h-[max(calc(100vh-300px),400px)] rounded-md border border-border p-2">
           <ul className="space-y-2 text-left text-sm">
             {entrants.map((entrant) => (
               <li
@@ -114,7 +119,8 @@ export const ParticipantsPanel = ({
         </ScrollArea>
         {drawPoolCount < entrants.length ? (
           <p className="text-xs text-muted-foreground">
-            {entrants.length - drawPoolCount} previous winner(s) excluded from the draw pool.
+            {entrants.length - drawPoolCount} previous winner(s) excluded from
+            the draw pool.
           </p>
         ) : null}
       </CardContent>

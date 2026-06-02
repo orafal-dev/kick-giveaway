@@ -146,6 +146,8 @@ function App() {
 
           <ConnectionBar
             channelName={giveaway.channelName}
+            devModeActive={giveaway.devModeEnabled}
+            devMockCount={giveaway.devMockEntrantCount}
             onChangeChannel={giveaway.handleChangeChannel}
             onClearAllData={giveaway.handleClearAllData}
           />

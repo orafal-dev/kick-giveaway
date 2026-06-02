@@ -4,6 +4,8 @@ import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 
 interface ConnectionBarProps {
   channelName: string;
+  devModeActive?: boolean;
+  devMockCount?: number;
   onChangeChannel: () => void;
   onClearAllData: () => void;
 }

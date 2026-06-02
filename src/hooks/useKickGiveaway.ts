@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KickChatMessage } from "@/App.types";
+import { devMode } from "@/config/devMode";
 import { KICK_WS_URLS } from "@/constants";
 import {
   CONFETTI_DURATION_MS,
@@ -22,6 +23,10 @@ import type {
 } from "@/giveaway/giveaway.types";
 import { pickWeightedWinner, normalizeValue } from "@/services/drawUtils";
 import { fetchKickChannelInfo } from "@/services/kickApi";
+import {
+  createMockKickMessages,
+  seedEntrantsFromMockMessages,
+} from "@/services/devMockEntrants";
 import { getEligibleDrawPool, tryAddEntrant } from "@/services/kickEntrants";
 import { KickWebSocketManager } from "@/services/kickWebSocket";
 
@@ -184,6 +189,24 @@ export const useKickGiveaway = () => {
       }, CONFETTI_DURATION_MS);
   }, []);
 
+  const seedDevEntrantsIfEnabled = useCallback((): void => {
+    if (!devMode.enabled) {
+      return;
+    }
+
+    const keyword = settingsRef.current.keyword;
+    const messages = createMockKickMessages(devMode.mockEntrantCount, keyword);
+
+    setEntrants((previousEntrants) =>
+      seedEntrantsFromMockMessages(
+        previousEntrants,
+        messages,
+        settingsRef.current,
+        channelSubscribersOnlyRef.current,
+      ),
+    );
+  }, []);
+
   const handleKickMessage = useCallback(
     (chatMessage: KickChatMessage): void => {
       const cutoff = Date.now() - RECENT_MESSAGES_RETENTION_MS;
@@ -268,7 +291,13 @@ export const useKickGiveaway = () => {
       manager.on("message", handleKickMessage);
       manager.on("subscription_ready", () => {
         setConnectionStatus("connected");
-        setPhase(giveawayStarted ? "collecting" : "idle");
+        if (giveawayStartedRef.current) {
+          setPhase("collecting");
+          seedDevEntrantsIfEnabled();
+          return;
+        }
+
+        setPhase("idle");
       });
 
       manager.connect(chatroomId, channelId);
@@ -281,7 +310,7 @@ export const useKickGiveaway = () => {
       );
       return false;
     }
-  }, [channelLabel, giveawayStarted, handleKickMessage]);
+  }, [channelLabel, handleKickMessage, seedDevEntrantsIfEnabled]);
 
   const handleStartGiveaway = useCallback(async (): Promise<void> => {
     if (!channelLabel) {
@@ -299,7 +328,8 @@ export const useKickGiveaway = () => {
     }
 
     setPhase("collecting");
-  }, [channelLabel, connectToChannel, connectionStatus]);
+    seedDevEntrantsIfEnabled();
+  }, [channelLabel, connectToChannel, connectionStatus, seedDevEntrantsIfEnabled]);
 
   const handleChannelLandingSubmit = useCallback(async (): Promise<void> => {
     if (!channelLabel) {
@@ -363,8 +393,19 @@ export const useKickGiveaway = () => {
     countdownActiveRef.current = false;
     setIsCountdownActive(false);
     setCountdownSeconds(settings.confirmTimeSeconds);
-    setPhase(connectionStatus === "connected" && giveawayStarted ? "collecting" : "idle");
-  }, [connectionStatus, giveawayStarted, settings.confirmTimeSeconds]);
+    const nextPhase =
+      connectionStatus === "connected" && giveawayStarted ? "collecting" : "idle";
+    setPhase(nextPhase);
+
+    if (nextPhase === "collecting") {
+      seedDevEntrantsIfEnabled();
+    }
+  }, [
+    connectionStatus,
+    giveawayStarted,
+    seedDevEntrantsIfEnabled,
+    settings.confirmTimeSeconds,
+  ]);
 
   const finalizeDraw = useCallback(
     (winner: Entrant): void => {
@@ -500,5 +541,7 @@ export const useKickGiveaway = () => {
     handleDisconnect,
     setIsDrawing,
     setPhase,
+    devModeEnabled: devMode.enabled,
+    devMockEntrantCount: devMode.mockEntrantCount,
   };
 };
