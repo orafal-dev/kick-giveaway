@@ -6,17 +6,9 @@ import type { VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import {
-  Toggle as ToggleComponent,
-  type toggleVariants,
-} from "@/components/ui/toggle";
-
-export const ToggleGroupContext: React.Context<
-  VariantProps<typeof toggleVariants>
-> = React.createContext<VariantProps<typeof toggleVariants>>({
-  size: "default",
-  variant: "default",
-});
+import { ToggleGroupContext } from "@/components/ui/toggle-group-context";
+import { Toggle as ToggleComponent } from "@/components/ui/toggle";
+import type { toggleVariants } from "@/components/ui/toggle.variants";
 
 export function ToggleGroup({
   className,

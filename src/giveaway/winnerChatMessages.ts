@@ -84,17 +84,25 @@ export const getWinnerChatMessages = (
     return winner.confirmationMessages;
   }
 
-  return recentChatMessages
-    .filter(
-      (message) =>
-        message.userId === winner.userId ||
-        normalizeValue(message.username) === normalizeValue(winner.username),
-    )
-    .map((message) => ({
+  const messages: WinnerConfirmationMessage[] = [];
+  const normalizedWinnerUsername = normalizeValue(winner.username);
+
+  for (const message of recentChatMessages) {
+    if (
+      message.userId !== winner.userId &&
+      normalizeValue(message.username) !== normalizedWinnerUsername
+    ) {
+      continue;
+    }
+
+    messages.push({
       message: message.message,
       timestamp:
         Number.isFinite(message.timestamp) && message.timestamp > 0
           ? message.timestamp
           : Date.now(),
-    }));
+    });
+  }
+
+  return messages;
 };

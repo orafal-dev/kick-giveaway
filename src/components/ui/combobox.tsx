@@ -7,16 +7,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export const ComboboxContext: React.Context<{
-  chipsRef: React.RefObject<Element | null> | null;
-  multiple: boolean;
-}> = React.createContext<{
-  chipsRef: React.RefObject<Element | null> | null;
-  multiple: boolean;
-}>({
-  chipsRef: null,
-  multiple: false,
-});
+import { ComboboxContext } from "@/components/ui/combobox-context";
 
 export function Combobox<Value, Multiple extends boolean | undefined = false>(
   props: ComboboxPrimitive.Root.Props<Value, Multiple>,
