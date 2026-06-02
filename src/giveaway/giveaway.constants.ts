@@ -13,17 +13,20 @@ export const DEFAULT_SETTINGS: GiveawaySettings = {
   winnerConfirmationEnabled: true,
   confirmTimeSeconds: 60,
   animationMode: "scramble",
+  animationDurationSeconds: 8,
 };
 
 export const ROLL_ANIMATION_MS = 2200;
 export const ROLL_ANIMATION_INTERVAL_MS = 80;
 export const CLASSIC_ANIMATION_INTERVAL_MS = 120;
-/** Total time for wheel-picker spin (fast start → slow stop). */
-export const WHEEL_SPIN_DURATION_MS = 5_200;
+/** Brief pause on the winner after the wheel stops (not scaled with the duration slider). */
+export const WHEEL_POST_SPIN_HOLD_MS = 800;
 /** Fallback hide delay; spawn tween is 5s, then pieces need time to fall. */
 export const CONFETTI_DURATION_MS = 15_000;
 export const RECENT_MESSAGES_RETENTION_MS = 60_000;
 export const RECENT_MESSAGES_LIMIT = 10;
+/** Max chat lines kept per winner after they are drawn. */
+export const WINNER_CONFIRMATION_MESSAGES_LIMIT = 10;
 
 export const MIN_WINNERS_COUNT = 1;
 export const MAX_WINNERS_COUNT = 50;
@@ -31,6 +34,8 @@ export const MIN_MULTIPLIER = 1;
 export const MAX_MULTIPLIER = 10;
 export const MIN_CONFIRM_SECONDS = 5;
 export const MAX_CONFIRM_SECONDS = 600;
+export const MIN_ANIMATION_DURATION_SECONDS = 3;
+export const MAX_ANIMATION_DURATION_SECONDS = 15;
 
 /** Stable reference for Base UI Select — must not be recreated per render. */
 export const ANIMATION_SELECT_ITEMS = [

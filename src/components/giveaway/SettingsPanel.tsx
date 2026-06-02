@@ -13,6 +13,7 @@ import {
   SidebarGroupContent,
   SidebarInput,
 } from "@/components/ui/sidebar";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import type {
   AnimationMode,
@@ -20,9 +21,11 @@ import type {
 } from "@/giveaway/giveaway.types";
 import {
   ANIMATION_SELECT_ITEMS,
+  MAX_ANIMATION_DURATION_SECONDS,
   MAX_CONFIRM_SECONDS,
   MAX_MULTIPLIER,
   MAX_WINNERS_COUNT,
+  MIN_ANIMATION_DURATION_SECONDS,
   MIN_CONFIRM_SECONDS,
   MIN_MULTIPLIER,
   MIN_WINNERS_COUNT,
@@ -35,6 +38,7 @@ export interface SettingsPanelProps {
   channelModeMessage: string;
   onUpdateSettings: (partial: Partial<GiveawaySettings>) => void;
   onStartGiveaway: () => void;
+  onResetGiveaway: () => void;
   showStartButton?: boolean;
 }
 
@@ -50,6 +54,7 @@ export const SettingsForm = ({
   channelModeMessage,
   onUpdateSettings,
   onStartGiveaway,
+  onResetGiveaway,
   showStartButton = true,
 }: SettingsPanelProps) => {
   const handleAnimationChange = (value: string | null): void => {
@@ -60,12 +65,28 @@ export const SettingsForm = ({
     onUpdateSettings({ animationMode: value as AnimationMode });
   };
 
+  const handleAnimationDurationChange = (
+    value: number | readonly number[],
+  ): void => {
+    const raw = Array.isArray(value) ? value[0] : value;
+    if (typeof raw !== "number" || Number.isNaN(raw)) {
+      return;
+    }
+
+    onUpdateSettings({
+      animationDurationSeconds: Math.min(
+        MAX_ANIMATION_DURATION_SECONDS,
+        Math.max(MIN_ANIMATION_DURATION_SECONDS, Math.round(raw)),
+      ),
+    });
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <SidebarGroup>
         <SidebarGroupContent className="space-y-3">
           <div className="space-y-2">
-            <Label htmlFor="keyword-input">Keyword (optional)</Label>
+            <Label htmlFor="keyword-input">Keyword</Label>
             <SidebarInput
               id="keyword-input"
               value={settings.keyword}
@@ -256,6 +277,33 @@ export const SettingsForm = ({
               </SelectPopup>
             </Select>
           </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="animation-duration-slider">
+                Animation duration
+              </Label>
+              <span
+                className="text-sm tabular-nums text-muted-foreground"
+                aria-hidden="true"
+              >
+                {settings.animationDurationSeconds}s
+              </span>
+            </div>
+            <Slider
+              id="animation-duration-slider"
+              min={MIN_ANIMATION_DURATION_SECONDS}
+              max={MAX_ANIMATION_DURATION_SECONDS}
+              step={1}
+              value={[settings.animationDurationSeconds]}
+              onValueChange={handleAnimationDurationChange}
+              aria-label={`Animation duration, ${settings.animationDurationSeconds} seconds`}
+            />
+            <p className="text-xs text-muted-foreground">
+              {MIN_ANIMATION_DURATION_SECONDS}s–{MAX_ANIMATION_DURATION_SECONDS}s
+              draw time. Wheel mode uses almost all of this for the spin.
+            </p>
+          </div>
         </SidebarGroupContent>
       </SidebarGroup>
 
@@ -270,13 +318,17 @@ export const SettingsForm = ({
           <Button
             type="button"
             className="w-full"
-            onClick={onStartGiveaway}
+            onClick={giveawayStarted ? onResetGiveaway : onStartGiveaway}
             disabled={connectionStatus === "connecting"}
-            aria-label="Start giveaway and connect to chat"
-            variant="kick"
+            aria-label={
+              giveawayStarted
+                ? "Reset giveaway to before start"
+                : "Start giveaway and connect to chat"
+            }
+            variant={giveawayStarted ? "secondary" : "kick"}
             size="2xl"
           >
-            {giveawayStarted ? "Giveaway Running" : "Start Giveaway"}
+            {giveawayStarted ? "Reset" : "Start Giveaway"}
           </Button>
           {!giveawayStarted ? (
             <p className="text-xs text-muted-foreground">

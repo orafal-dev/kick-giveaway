@@ -9,10 +9,11 @@ type EventHandler<T extends KickWebSocketEventType> = (
   payload: KickWebSocketEventMap[T],
 ) => void;
 
+const MAX_DEDUPED_MESSAGE_IDS = 1_000;
+
 export class KickWebSocketManager {
-  private ws: WebSocket | null = null;
+  private readonly sockets = new Map<number, WebSocket>();
   private readonly urls: string[];
-  private activeUrlIndex = 0;
   private chatroomId: string | null = null;
   private channelId: string | null = null;
   private subscribedChannels: string[] = [];
@@ -21,6 +22,10 @@ export class KickWebSocketManager {
   private reconnectDelayMs = 2_000;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+  private hasEmittedConnect = false;
+  private hasEmittedSubscriptionReady = false;
+  private isDisconnecting = false;
+  private readonly recentMessageIds = new Set<string>();
   private eventHandlers: Record<
     KickWebSocketEventType,
     Set<(payload: unknown) => void>
@@ -58,69 +63,106 @@ export class KickWebSocketManager {
   }
 
   connect(chatroomId: string, channelId?: string | null): void {
+    this.isDisconnecting = false;
     this.chatroomId = chatroomId;
     this.channelId = channelId ?? null;
     this.subscribedChannels = this.buildChannelVariants(chatroomId, this.channelId);
-    const socketUrl = new URL(this.getActiveUrl());
-    this.ws = new WebSocket(socketUrl.toString());
+    this.hasEmittedConnect = false;
+    this.hasEmittedSubscriptionReady = false;
+    this.reconnectAttempts = 0;
+    this.recentMessageIds.clear();
 
-    this.ws.onopen = () => {
-      this.reconnectAttempts = 0;
-      this.startHeartbeat();
-      this.sendSubscribe();
-      this.emit("connect", undefined);
-    };
-
-    this.ws.onmessage = (event) => {
-      if (typeof event.data !== "string") {
-        return;
-      }
-
-      this.handleIncoming(event.data);
-    };
-
-    this.ws.onerror = () => {
-      this.emit("error", "WebSocket connection failed.");
-    };
-
-    this.ws.onclose = () => {
-      this.stopHeartbeat();
-      this.emit("disconnect", undefined);
-      this.tryReconnect();
-    };
+    this.urls.forEach((url, index) => {
+      this.openSocket(index, url);
+    });
   }
 
   disconnect(): void {
+    this.isDisconnecting = true;
     this.stopHeartbeat();
     this.reconnectAttempts = this.maxReconnectAttempts;
     this.clearReconnectTimeout();
     this.chatroomId = null;
     this.channelId = null;
+    this.hasEmittedConnect = false;
+    this.hasEmittedSubscriptionReady = false;
+    this.recentMessageIds.clear();
 
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
+    this.sockets.forEach((socket) => {
+      socket.close();
+    });
+    this.sockets.clear();
   }
 
-  private sendSubscribe(): void {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.chatroomId) {
+  private openSocket(index: number, url: string): void {
+    const existing = this.sockets.get(index);
+    if (existing) {
+      existing.close();
+      this.sockets.delete(index);
+    }
+
+    const ws = new WebSocket(url);
+    this.sockets.set(index, ws);
+
+    ws.onopen = () => {
+      this.sendSubscribe(ws);
+
+      if (!this.hasEmittedConnect) {
+        this.hasEmittedConnect = true;
+        this.startHeartbeat();
+        this.emit("connect", undefined);
+      }
+    };
+
+    ws.onmessage = (event) => {
+      if (typeof event.data !== "string") {
+        return;
+      }
+
+      this.handleIncoming(ws, event.data);
+    };
+
+    ws.onerror = () => {
+      if (!this.hasEmittedConnect) {
+        this.emit("error", "WebSocket connection failed.");
+      }
+    };
+
+    ws.onclose = () => {
+      this.sockets.delete(index);
+
+      if (this.sockets.size === 0) {
+        this.stopHeartbeat();
+        this.hasEmittedConnect = false;
+        this.hasEmittedSubscriptionReady = false;
+        this.emit("disconnect", undefined);
+
+        if (!this.isDisconnecting) {
+          this.tryReconnect();
+        }
+      }
+    };
+  }
+
+  private sendSubscribe(ws: WebSocket): void {
+    if (ws.readyState !== WebSocket.OPEN) {
       return;
     }
 
     this.subscribedChannels.forEach((channel) => {
-      const subscribeMessage = {
-        event: "pusher:subscribe",
-        data: {
-          channel,
-        },
-      };
-
-      this.ws?.send(JSON.stringify(subscribeMessage));
+      ws.send(
+        JSON.stringify({
+          event: "pusher:subscribe",
+          data: {
+            auth: "",
+            channel,
+          },
+        }),
+      );
     });
   }
 
-  private handleIncoming(rawData: string): void {
+  private handleIncoming(ws: WebSocket, rawData: string): void {
     const parsed = this.tryParseJson(rawData);
 
     if (!parsed || typeof parsed !== "object") {
@@ -145,13 +187,7 @@ export class KickWebSocketManager {
       const payload = this.readUnknownValue(parsed, "data");
       const parsedPayload =
         typeof payload === "string" ? this.tryParseJson(payload) : payload;
-      const code = this.readNumericValue(parsedPayload, "code");
       const message = this.readStringValue(parsedPayload ?? {}, "message");
-
-      if (code === 4001 && this.trySwitchToNextUrl()) {
-        this.ws?.close();
-        return;
-      }
 
       if (message) {
         this.emit("error", message);
@@ -166,15 +202,18 @@ export class KickWebSocketManager {
       const payload = this.readUnknownValue(parsed, "data");
       const parsedPayload =
         typeof payload === "string" ? this.tryParseJson(payload) : payload;
-      const channel = this.extractChannelName(parsedPayload);
+      const subscriptionChannel = this.extractChannelName(parsedPayload);
       const fallbackChannel = this.subscribedChannels[0] ?? "unknown";
 
-      this.emit("subscription_ready", channel ?? fallbackChannel);
+      if (!this.hasEmittedSubscriptionReady) {
+        this.hasEmittedSubscriptionReady = true;
+        this.emit("subscription_ready", subscriptionChannel ?? fallbackChannel);
+      }
       return;
     }
 
     if (event === "pusher:ping") {
-      this.ws?.send(JSON.stringify({ event: "pusher:pong" }));
+      ws.send(JSON.stringify({ event: "pusher:pong" }));
       return;
     }
 
@@ -191,22 +230,42 @@ export class KickWebSocketManager {
       parsedPayload as KickChatMessagePayload,
     );
 
-    if (!message) {
+    if (!message || !this.shouldEmitMessage(message)) {
       return;
     }
 
     this.emit("message", message);
   }
 
+  private shouldEmitMessage(message: KickChatMessage): boolean {
+    if (this.recentMessageIds.has(message.id)) {
+      return false;
+    }
+
+    this.recentMessageIds.add(message.id);
+
+    if (this.recentMessageIds.size > MAX_DEDUPED_MESSAGE_IDS) {
+      const oldestId = this.recentMessageIds.values().next().value;
+      if (oldestId) {
+        this.recentMessageIds.delete(oldestId);
+      }
+    }
+
+    return true;
+  }
+
   private buildChannelVariants(
     chatroomId: string,
     channelId: string | null,
   ): string[] {
-    const baseName = `chatrooms.${chatroomId}`;
-    const channels = [`${baseName}.v2`, `${baseName}.v1`, baseName];
+    const channels = [
+      `chatroom_${chatroomId}`,
+      `chatrooms.${chatroomId}.v2`,
+      `chatrooms.${chatroomId}`,
+    ];
 
     if (channelId) {
-      channels.push(`channel.${channelId}`);
+      channels.splice(1, 0, `channel_${channelId}`, `channel.${channelId}`);
     }
 
     return channels;
@@ -254,55 +313,15 @@ export class KickWebSocketManager {
     }
   }
 
-  private readUnknownValue(
-    value: object,
-    key: string,
-  ): unknown {
+  private readUnknownValue(value: object, key: string): unknown {
     const dictionary = value as Record<string, unknown>;
     return dictionary[key];
   }
 
-  private readStringValue(
-    value: object,
-    key: string,
-  ): string | null {
+  private readStringValue(value: object, key: string): string | null {
     const dictionary = value as Record<string, unknown>;
     const rawValue = dictionary[key];
     return typeof rawValue === "string" ? rawValue : null;
-  }
-
-  private readNumericValue(
-    value: unknown,
-    key: string,
-  ): number | null {
-    if (!value || typeof value !== "object") {
-      return null;
-    }
-
-    const dictionary = value as Record<string, unknown>;
-    const rawValue = dictionary[key];
-    return typeof rawValue === "number" ? rawValue : null;
-  }
-
-  private getActiveUrl(): string {
-    if (this.urls.length === 0) {
-      throw new Error("No WebSocket URLs configured.");
-    }
-
-    return this.urls[this.activeUrlIndex] ?? this.urls[0];
-  }
-
-  private trySwitchToNextUrl(): boolean {
-    if (this.urls.length <= 1) {
-      return false;
-    }
-
-    if (this.activeUrlIndex >= this.urls.length - 1) {
-      return false;
-    }
-
-    this.activeUrlIndex += 1;
-    return true;
   }
 
   private toKickChatMessage(payload: KickChatMessagePayload): KickChatMessage | null {
@@ -387,12 +406,18 @@ export class KickWebSocketManager {
   }
 
   private startHeartbeat(): void {
-    this.heartbeatInterval = setInterval(() => {
-      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-        return;
-      }
+    if (this.heartbeatInterval) {
+      return;
+    }
 
-      this.ws.send(JSON.stringify({ event: "pusher:ping" }));
+    this.heartbeatInterval = setInterval(() => {
+      this.sockets.forEach((socket) => {
+        if (socket.readyState !== WebSocket.OPEN) {
+          return;
+        }
+
+        socket.send(JSON.stringify({ event: "pusher:ping" }));
+      });
     }, 25_000);
   }
 
@@ -419,7 +444,9 @@ export class KickWebSocketManager {
         return;
       }
 
-      this.connect(this.chatroomId, this.channelId);
+      this.urls.forEach((url, index) => {
+        this.openSocket(index, url);
+      });
     }, nextDelay);
   }
 

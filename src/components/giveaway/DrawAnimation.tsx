@@ -1,14 +1,14 @@
-import { useEffect, useRef } from "react";
-import type { AnimationMode, Entrant } from "@/giveaway/giveaway.types";
+import { useEffect, useMemo, useRef } from "react";
 import {
-  CLASSIC_ANIMATION_INTERVAL_MS,
-  ROLL_ANIMATION_INTERVAL_MS,
-  ROLL_ANIMATION_MS,
-} from "@/giveaway/giveaway.constants";
+  getDrawAnimationTimings,
+  getRollIntervalMs,
+} from "@/giveaway/animationTiming";
+import type { AnimationMode, Entrant } from "@/giveaway/giveaway.types";
 import { getSecureRandomIndex } from "@/services/drawUtils";
 
 interface DrawAnimationProps {
   mode: AnimationMode;
+  animationDurationSeconds: number;
   entrants: Entrant[];
   winner: Entrant;
   isActive: boolean;
@@ -18,6 +18,7 @@ interface DrawAnimationProps {
 
 export const DrawAnimation = ({
   mode,
+  animationDurationSeconds,
   entrants,
   winner,
   isActive,
@@ -26,6 +27,10 @@ export const DrawAnimation = ({
 }: DrawAnimationProps) => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timings = useMemo(
+    () => getDrawAnimationTimings(animationDurationSeconds),
+    [animationDurationSeconds],
+  );
 
   useEffect(() => {
     if (!isActive || entrants.length === 0 || mode === "wheel") {
@@ -54,11 +59,8 @@ export const DrawAnimation = ({
     stopTimers();
     cycleRandom();
 
-    const durationMs = ROLL_ANIMATION_MS;
-    const intervalMs =
-      mode === "classic"
-        ? CLASSIC_ANIMATION_INTERVAL_MS
-        : ROLL_ANIMATION_INTERVAL_MS;
+    const durationMs = timings.rollDurationMs;
+    const intervalMs = getRollIntervalMs(mode, timings);
 
     intervalRef.current = setInterval(cycleRandom, intervalMs);
 
@@ -69,7 +71,15 @@ export const DrawAnimation = ({
     }, durationMs);
 
     return stopTimers;
-  }, [entrants, isActive, mode, onComplete, onDisplayChange, winner.username]);
+  }, [
+    entrants,
+    isActive,
+    mode,
+    onComplete,
+    onDisplayChange,
+    timings,
+    winner.username,
+  ]);
 
   return null;
 };

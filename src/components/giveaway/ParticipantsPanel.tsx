@@ -1,6 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Entrant } from "@/giveaway/giveaway.types";
@@ -32,8 +38,8 @@ const getDrawWinnerBlockReason = ({
 
   if (winnersTargetReached) {
     return winnersCount === 1
-      ? "The winner has already been drawn."
-      : `All ${winnersCount} winners have been drawn.`;
+      ? "An accepted winner has already been selected."
+      : `All ${winnersCount} accepted winners have been selected.`;
   }
 
   if (drawPoolCount === 0) {
@@ -55,7 +61,6 @@ interface ParticipantsPanelProps {
   winnersTargetReached: boolean;
   winnersCount: number;
   onDrawWinner: () => void;
-  onReset: () => void;
 }
 
 export const ParticipantsPanel = ({
@@ -66,7 +71,6 @@ export const ParticipantsPanel = ({
   winnersTargetReached,
   winnersCount,
   onDrawWinner,
-  onReset,
 }: ParticipantsPanelProps) => {
   const drawWinnerBlockReason = getDrawWinnerBlockReason({
     giveawayStarted,
@@ -112,14 +116,6 @@ export const ParticipantsPanel = ({
           ) : (
             drawWinnerButton
           )}
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onReset}
-            aria-label="Reset giveaway participants and winners"
-          >
-            Reset
-          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -154,12 +150,14 @@ export const ParticipantsPanel = ({
             ) : null}
           </ul>
         </ScrollArea>
-        {drawPoolCount < entrants.length ? (
-          <p className="text-xs text-muted-foreground">
-            {entrants.length - drawPoolCount} previous winner(s) excluded from
-            the draw pool.
-          </p>
-        ) : null}
+        <CardFooter>
+          {drawPoolCount < entrants.length ? (
+            <p className="text-xs text-muted-foreground">
+              {entrants.length - drawPoolCount} accepted winner(s) excluded from
+              the draw pool.
+            </p>
+          ) : null}
+        </CardFooter>
       </CardContent>
     </Card>
   );

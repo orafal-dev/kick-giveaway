@@ -5,6 +5,7 @@ import type { AnimationMode, Entrant } from "@/giveaway/giveaway.types";
 interface DrawingOverlayProps {
   isVisible: boolean;
   mode: AnimationMode;
+  animationDurationSeconds: number;
   entrants: Entrant[];
   winner: Entrant;
   displayName: string;
@@ -15,6 +16,7 @@ interface DrawingOverlayProps {
 export const DrawingOverlay = ({
   isVisible,
   mode,
+  animationDurationSeconds,
   entrants,
   winner,
   displayName,
@@ -34,47 +36,41 @@ export const DrawingOverlay = ({
       aria-modal="true"
       aria-label="Drawing winner"
     >
-      <div className="mx-4 w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-2xl">
-        <p className="mb-4 text-sm uppercase tracking-widest text-muted-foreground">
-          Drawing...
-        </p>
+      {isWheelMode ? (
+        <WheelPickerDrawAnimation
+          animationDurationSeconds={animationDurationSeconds}
+          entrants={entrants}
+          winner={winner}
+          isActive={isVisible}
+          onDisplayChange={onDisplayChange}
+          onComplete={onComplete}
+        />
+      ) : (
+        <div className="mx-4 w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-2xl">
+          <p className="mb-4 text-sm uppercase tracking-widest text-muted-foreground">
+            Drawing...
+          </p>
 
-        {isWheelMode ? (
-          <WheelPickerDrawAnimation
-            entrants={entrants}
-            winner={winner}
-            isActive={isVisible}
-            onDisplayChange={onDisplayChange}
-            onComplete={onComplete}
-          />
-        ) : (
           <p
             className={`mb-2 font-semibold text-primary ${
               mode === "classic" ? "text-5xl" : "text-4xl animate-pulse"
             }`}
+            aria-live="polite"
           >
             {displayName || "..."}
           </p>
-        )}
 
-        {!isWheelMode ? (
           <DrawAnimation
             mode={mode}
+            animationDurationSeconds={animationDurationSeconds}
             entrants={entrants}
             winner={winner}
             isActive={isVisible}
             onDisplayChange={onDisplayChange}
             onComplete={onComplete}
           />
-        ) : (
-          <p
-            className="mt-4 text-2xl font-semibold text-primary"
-            aria-live="polite"
-          >
-            {displayName || "..."}
-          </p>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

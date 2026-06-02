@@ -19,8 +19,17 @@ import type {
   GiveawayPhase,
   GiveawaySettings,
   PendingWinner,
+  WinnerConfirmationMessage,
   WinnerRecord,
 } from "@/giveaway/giveaway.types";
+import {
+  appendConfirmationMessage,
+  createWinnerChatCapture,
+  isMessageFromPendingWinner,
+  isMessageFromWinnerChatCapture,
+  toConfirmationMessage,
+  type WinnerChatCapture,
+} from "@/giveaway/winnerChatMessages";
 import { pickWeightedWinner, normalizeValue } from "@/services/drawUtils";
 import { fetchKickChannelInfo } from "@/services/kickApi";
 import {
@@ -67,6 +76,9 @@ export const useKickGiveaway = () => {
   const [channelModeMessage, setChannelModeMessage] = useState("");
   const [channelSubscribersOnly, setChannelSubscribersOnly] = useState(false);
   const [lastMessages, setLastMessages] = useState<KickChatMessage[]>([]);
+  const [pendingWinnerMessages, setPendingWinnerMessages] = useState<
+    WinnerConfirmationMessage[]
+  >([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawTarget, setDrawTarget] = useState<Entrant | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -85,6 +97,8 @@ export const useKickGiveaway = () => {
   const wsRef = useRef<KickWebSocketManager | null>(null);
   const settingsRef = useRef(settings);
   const pendingWinnerRef = useRef(pendingWinner);
+  const pendingWinnerMessagesRef = useRef(pendingWinnerMessages);
+  const winnerChatCaptureRef = useRef<WinnerChatCapture | null>(null);
   const countdownActiveRef = useRef(isCountdownActive);
   const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelSubscribersOnlyRef = useRef(channelSubscribersOnly);
@@ -99,7 +113,12 @@ export const useKickGiveaway = () => {
     () => getEligibleDrawPool(entrants, winners),
     [entrants, winners],
   );
-  const winnersTargetReached = winners.length >= settings.winnersCount;
+  const acceptedWinnersCount = useMemo(
+    () => winners.filter((winner) => !winner.noShow).length,
+    [winners],
+  );
+  const winnersTargetReached =
+    acceptedWinnersCount >= settings.winnersCount;
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -108,6 +127,10 @@ export const useKickGiveaway = () => {
   useEffect(() => {
     pendingWinnerRef.current = pendingWinner;
   }, [pendingWinner]);
+
+  useEffect(() => {
+    pendingWinnerMessagesRef.current = pendingWinnerMessages;
+  }, [pendingWinnerMessages]);
 
   useEffect(() => {
     countdownActiveRef.current = isCountdownActive;
@@ -158,8 +181,75 @@ export const useKickGiveaway = () => {
     };
   }, []);
 
+  const appendCapturedWinnerMessage = useCallback(
+    (chatMessage: KickChatMessage): WinnerConfirmationMessage[] | null => {
+      const capture = winnerChatCaptureRef.current;
+      if (!capture || Date.now() > capture.captureUntil) {
+        if (capture && Date.now() > capture.captureUntil) {
+          winnerChatCaptureRef.current = null;
+        }
+        return null;
+      }
+
+      if (!isMessageFromWinnerChatCapture(chatMessage, capture)) {
+        return null;
+      }
+
+      const entry = toConfirmationMessage(chatMessage);
+
+      if (pendingWinnerRef.current) {
+        const nextMessages = appendConfirmationMessage(
+          pendingWinnerMessagesRef.current,
+          entry,
+        );
+        pendingWinnerMessagesRef.current = nextMessages;
+        setPendingWinnerMessages(nextMessages);
+        return nextMessages;
+      }
+
+      setWinners((previousWinners) =>
+        previousWinners.map((winner) => {
+          if (
+            winner.userId !== capture.userId &&
+            normalizeValue(winner.username) !== normalizeValue(capture.username)
+          ) {
+            return winner;
+          }
+
+          return {
+            ...winner,
+            confirmationMessages: appendConfirmationMessage(
+              winner.confirmationMessages,
+              entry,
+            ),
+          };
+        }),
+      );
+
+      return null;
+    },
+    [],
+  );
+
   const confirmWinner = useCallback(
-    (username: string, confirmedAt: number | null = Date.now()): void => {
+    (
+      username: string,
+      options: {
+        confirmedAt?: number | null;
+        showConfetti?: boolean;
+        noShow?: boolean;
+        confirmationMessages?: WinnerConfirmationMessage[];
+        userId?: string;
+      } = {},
+    ): void => {
+      const {
+        confirmedAt = Date.now(),
+        showConfetti = true,
+        noShow = false,
+        confirmationMessages = pendingWinnerMessagesRef.current,
+        userId = pendingWinnerRef.current?.userId ?? username,
+      } = options;
+
       setWinners((previousWinners) => {
         const alreadyRecorded = previousWinners.some(
           (winner) =>
@@ -174,13 +264,19 @@ export const useKickGiveaway = () => {
           ...previousWinners,
           {
             username,
+            userId,
             confirmedAt,
+            noShow,
             drawIndex: previousWinners.length + 1,
+            confirmationMessages: noShow ? [] : [...confirmationMessages],
           },
         ];
 
+        const acceptedCount = nextWinners.filter(
+          (winner) => !winner.noShow,
+        ).length;
         setPhase(
-          nextWinners.length >= settingsRef.current.winnersCount
+          acceptedCount >= settingsRef.current.winnersCount
             ? "completed"
             : "collecting",
         );
@@ -188,10 +284,29 @@ export const useKickGiveaway = () => {
         return nextWinners;
       });
 
+      const pending = pendingWinnerRef.current;
+      if (!noShow && pending) {
+        winnerChatCaptureRef.current = createWinnerChatCapture(
+          userId,
+          username,
+          pending.startedAt,
+          settingsRef.current.confirmTimeSeconds,
+        );
+      } else {
+        winnerChatCaptureRef.current = null;
+      }
+
       setPendingWinner(null);
       pendingWinnerRef.current = null;
+      setPendingWinnerMessages([]);
+      pendingWinnerMessagesRef.current = [];
       countdownActiveRef.current = false;
       setIsCountdownActive(false);
+
+      if (!showConfetti) {
+        return;
+      }
+
       setShowConfetti(true);
 
       if (confettiTimeoutRef.current) {
@@ -242,13 +357,19 @@ export const useKickGiveaway = () => {
           .slice(0, RECENT_MESSAGES_LIMIT),
       );
 
+      if (winnerChatCaptureRef.current || pendingWinnerRef.current) {
+        appendCapturedWinnerMessage(chatMessage);
+      }
+
+      const pending = pendingWinnerRef.current;
       if (
         countdownActiveRef.current &&
-        pendingWinnerRef.current &&
-        normalizeValue(chatMessage.username) ===
-          normalizeValue(pendingWinnerRef.current.username)
+        pending &&
+        isMessageFromPendingWinner(chatMessage, pending)
       ) {
-        confirmWinner(chatMessage.username);
+        confirmWinner(pending.username, {
+          confirmationMessages: pendingWinnerMessagesRef.current,
+        });
       }
 
       if (
@@ -268,7 +389,7 @@ export const useKickGiveaway = () => {
         ),
       );
     },
-    [confirmWinner],
+    [appendCapturedWinnerMessage, confirmWinner],
   );
 
   const connectToChannel = useCallback(async (): Promise<boolean> => {
@@ -292,7 +413,7 @@ export const useKickGiveaway = () => {
         wsRef.current.disconnect();
       }
 
-      const manager = new KickWebSocketManager(KICK_WS_URLS);
+      const manager = new KickWebSocketManager([...KICK_WS_URLS]);
       wsRef.current = manager;
 
       manager.on("disconnect", () => {
@@ -383,6 +504,8 @@ export const useKickGiveaway = () => {
     setIsChannelStepComplete(false);
     setChannelModeMessage("");
     setPendingWinner(null);
+    setPendingWinnerMessages([]);
+    winnerChatCaptureRef.current = null;
     setIsDrawing(false);
     setDisplayName("");
     countdownActiveRef.current = false;
@@ -399,6 +522,8 @@ export const useKickGiveaway = () => {
     setWinners([]);
     setPhase("idle");
     setPendingWinner(null);
+    setPendingWinnerMessages([]);
+    winnerChatCaptureRef.current = null;
     setDrawCount(0);
     setConnectionStatus("idle");
     setGiveawayStarted(false);
@@ -415,31 +540,28 @@ export const useKickGiveaway = () => {
   }, []);
 
   const handleReset = useCallback((): void => {
+    setGiveawayStarted(false);
+    setPhase("idle");
     setEntrants([]);
     setWinners([]);
     setPendingWinner(null);
+    pendingWinnerRef.current = null;
+    setPendingWinnerMessages([]);
+    pendingWinnerMessagesRef.current = [];
+    winnerChatCaptureRef.current = null;
     setDrawCount(0);
     setIsDrawing(false);
     setDrawTarget(null);
     setDisplayName("");
+    setShowConfetti(false);
+    if (confettiTimeoutRef.current) {
+      clearTimeout(confettiTimeoutRef.current);
+      confettiTimeoutRef.current = null;
+    }
     countdownActiveRef.current = false;
     setIsCountdownActive(false);
     setCountdownSeconds(settings.confirmTimeSeconds);
-    const nextPhase =
-      connectionStatus === "connected" && giveawayStarted
-        ? "collecting"
-        : "idle";
-    setPhase(nextPhase);
-
-    if (nextPhase === "collecting") {
-      seedDevEntrantsIfEnabled();
-    }
-  }, [
-    connectionStatus,
-    giveawayStarted,
-    seedDevEntrantsIfEnabled,
-    settings.confirmTimeSeconds,
-  ]);
+  }, [settings.confirmTimeSeconds]);
 
   const finalizeDraw = useCallback(
     (winner: Entrant): void => {
@@ -449,10 +571,24 @@ export const useKickGiveaway = () => {
       setDrawCount((previous) => previous + 1);
 
       if (settingsRef.current.winnerConfirmationEnabled) {
-        setPendingWinner({ username: winner.username, startedAt: Date.now() });
+        const startedAt = Date.now();
+        setPendingWinnerMessages([]);
+        pendingWinnerMessagesRef.current = [];
+        winnerChatCaptureRef.current = createWinnerChatCapture(
+          winner.userId,
+          winner.username,
+          startedAt,
+          settingsRef.current.confirmTimeSeconds,
+        );
+        setPendingWinner({
+          username: winner.username,
+          userId: winner.userId,
+          startedAt,
+        });
         pendingWinnerRef.current = {
           username: winner.username,
-          startedAt: Date.now(),
+          userId: winner.userId,
+          startedAt,
         };
         setCountdownSeconds(settingsRef.current.confirmTimeSeconds);
         countdownActiveRef.current = true;
@@ -461,7 +597,12 @@ export const useKickGiveaway = () => {
         return;
       }
 
-      confirmWinner(winner.username, null);
+      confirmWinner(winner.username, {
+        confirmedAt: null,
+        showConfetti: true,
+        noShow: false,
+        confirmationMessages: [],
+      });
     },
     [confirmWinner],
   );
@@ -483,6 +624,7 @@ export const useKickGiveaway = () => {
     countdownActiveRef.current = false;
     setIsCountdownActive(false);
     setShowConfetti(false);
+    winnerChatCaptureRef.current = null;
   }, [drawPool, isDrawing, winnersTargetReached]);
 
   const handleManualConfirm = useCallback((): void => {
@@ -490,7 +632,9 @@ export const useKickGiveaway = () => {
       return;
     }
 
-    confirmWinner(pendingWinner.username);
+    confirmWinner(pendingWinner.username, {
+      confirmationMessages: [...pendingWinnerMessagesRef.current],
+    });
   }, [confirmWinner, pendingWinner]);
 
   const handleDisconnect = useCallback((): void => {
@@ -519,7 +663,12 @@ export const useKickGiveaway = () => {
           countdownActiveRef.current = false;
           setIsCountdownActive(false);
           if (pendingWinnerRef.current) {
-            confirmWinner(pendingWinnerRef.current.username, null);
+            confirmWinner(pendingWinnerRef.current.username, {
+              confirmedAt: null,
+              showConfetti: false,
+              noShow: true,
+              confirmationMessages: [],
+            });
           }
           return 0;
         }
@@ -557,6 +706,7 @@ export const useKickGiveaway = () => {
     errorMessage,
     channelModeMessage,
     lastMessages,
+    pendingWinnerMessages,
     isDrawing,
     drawTarget,
     setDrawTarget,
