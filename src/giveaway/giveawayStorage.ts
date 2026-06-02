@@ -3,14 +3,12 @@ import {
   MAX_ANIMATION_DURATION_SECONDS,
   MIN_ANIMATION_DURATION_SECONDS,
   STORAGE_KEY,
-  THEME_STORAGE_KEY,
 } from "@/giveaway/giveaway.constants";
 import type {
   AnimationMode,
   GiveawayPhase,
   GiveawaySettings,
   PersistedGiveawayState,
-  ThemeMode,
   WinnerRecord,
 } from "@/giveaway/giveaway.types";
 
@@ -236,23 +234,3 @@ export const clearPersistedState = (): void => {
   window.localStorage.removeItem("kick-giveaway-keyword");
 };
 
-export const getInitialTheme = (): ThemeMode["mode"] => {
-  if (typeof window === "undefined") {
-    return "dark";
-  }
-
-  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-  if (storedTheme === "dark" || storedTheme === "light") {
-    return storedTheme;
-  }
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-};
-
-export const saveTheme = (mode: ThemeMode["mode"]): void => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(THEME_STORAGE_KEY, mode);
-};

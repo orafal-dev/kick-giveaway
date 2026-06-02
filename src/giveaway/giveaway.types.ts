@@ -66,6 +66,3 @@ export interface PersistedGiveawayState {
   drawCount: number;
 }
 
-export interface ThemeMode {
-  mode: "dark" | "light";
-}

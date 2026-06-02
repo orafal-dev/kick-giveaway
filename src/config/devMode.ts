@@ -15,6 +15,9 @@ const parseCount = (value: string | undefined, fallback: number): number => {
 };
 
 export const devMode = {
-  enabled: parseBool(import.meta.env.VITE_DEV_MODE),
-  mockEntrantCount: parseCount(import.meta.env.VITE_DEV_MOCK_ENTRANT_COUNT, 300),
+  enabled: parseBool(process.env.NEXT_PUBLIC_DEV_MODE),
+  mockEntrantCount: parseCount(
+    process.env.NEXT_PUBLIC_DEV_MOCK_ENTRANT_COUNT,
+    300,
+  ),
 } as const;

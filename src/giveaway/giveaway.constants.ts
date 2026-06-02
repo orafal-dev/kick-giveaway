@@ -1,7 +1,6 @@
 import type { GiveawaySettings } from "@/giveaway/giveaway.types";
 
 export const STORAGE_KEY = "kick-giveaway-state-v2";
-export const THEME_STORAGE_KEY = "kick-giveaway-theme";
 
 export const DEFAULT_SETTINGS: GiveawaySettings = {
   keyword: "!giveaway",
