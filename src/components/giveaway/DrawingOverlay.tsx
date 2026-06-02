@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { DrawAnimation } from "@/components/giveaway/DrawAnimation";
 import { WheelPickerDrawAnimation } from "@/components/giveaway/WheelPickerDrawAnimation";
 import type { AnimationMode, Entrant } from "@/giveaway/giveaway.types";
@@ -23,6 +26,32 @@ export const DrawingOverlay = ({
   onDisplayChange,
   onComplete,
 }: DrawingOverlayProps) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) {
+      return;
+    }
+
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+
+    const handleCancel = (event: Event) => {
+      event.preventDefault();
+    };
+
+    dialog.addEventListener("cancel", handleCancel);
+
+    return () => {
+      dialog.removeEventListener("cancel", handleCancel);
+      if (dialog.open) {
+        dialog.close();
+      }
+    };
+  }, []);
+
   if (!isVisible) {
     return null;
   }
@@ -30,11 +59,10 @@ export const DrawingOverlay = ({
   const isWheelMode = mode === "wheel";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      ref={dialogRef}
       aria-label="Drawing winner"
+      className="fixed inset-0 z-50 m-0 flex h-dvh w-dvw max-h-none max-w-none items-center justify-center border-0 bg-transparent p-0 open:flex backdrop:bg-background/80 backdrop:backdrop-blur-sm"
     >
       {isWheelMode ? (
         <WheelPickerDrawAnimation
@@ -71,6 +99,6 @@ export const DrawingOverlay = ({
           />
         </div>
       )}
-    </div>
+    </dialog>
   );
 };

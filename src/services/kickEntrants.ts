@@ -23,11 +23,12 @@ export const getEligibleDrawPool = (
   entrants: Entrant[],
   winners: WinnerRecord[],
 ): Entrant[] => {
-  const winnerUsernames = new Set(
-    winners
-      .filter((winner) => !winner.noShow)
-      .map((winner) => normalizeValue(winner.username)),
-  );
+  const winnerUsernames = new Set<string>();
+  for (const winner of winners) {
+    if (!winner.noShow) {
+      winnerUsernames.add(normalizeValue(winner.username));
+    }
+  }
 
   return entrants.filter(
     (entrant) => !winnerUsernames.has(normalizeValue(entrant.username)),

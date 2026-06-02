@@ -6,11 +6,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 
-export const NumberFieldContext: React.Context<{
-  fieldId: string;
-} | null> = React.createContext<{
-  fieldId: string;
-} | null>(null);
+import { NumberFieldContext } from "@/components/ui/number-field-context";
 
 export function NumberField({
   id,

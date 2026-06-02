@@ -19,6 +19,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  SidebarContext,
+  type SidebarContextProps,
+} from "@/components/ui/sidebar-context";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 
 const SIDEBAR_COOKIE_NAME: string = "sidebar_state";
@@ -49,19 +53,6 @@ const sidebarMenuButtonVariants = cva(
     },
   },
 );
-
-export type SidebarContextProps = {
-  state: "expanded" | "collapsed";
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  openMobile: boolean;
-  setOpenMobile: (open: boolean) => void;
-  isMobile: boolean;
-  toggleSidebar: () => void;
-};
-
-export const SidebarContext: React.Context<SidebarContextProps | null> =
-  React.createContext<SidebarContextProps | null>(null);
 
 export function useSidebar(): SidebarContextProps {
   const context = React.useContext(SidebarContext);
