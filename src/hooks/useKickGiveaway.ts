@@ -681,13 +681,40 @@ export const useKickGiveaway = () => {
   }, [confirmWinner, isCountdownActive]);
 
   useEffect(() => {
+    if (connectionStatus !== "connected") {
+      return;
+    }
+
+    const manager = wsRef.current;
+    if (!manager) {
+      return;
+    }
+
+    wsRef.current = manager;
+
     return () => {
-      wsRef.current?.disconnect();
-      if (confettiTimeoutRef.current) {
-        clearTimeout(confettiTimeoutRef.current);
+      manager.disconnect();
+      if (wsRef.current === manager) {
+        wsRef.current = null;
       }
     };
-  }, []);
+  }, [connectionStatus]);
+
+  useEffect(() => {
+    if (!showConfetti) {
+      return;
+    }
+
+    const confettiTimeout = confettiTimeoutRef.current;
+    confettiTimeoutRef.current = confettiTimeout;
+
+    return () => {
+      if (confettiTimeout) {
+        clearTimeout(confettiTimeout);
+        confettiTimeoutRef.current = null;
+      }
+    };
+  }, [showConfetti]);
 
   return {
     channelName,

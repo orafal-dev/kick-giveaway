@@ -2,6 +2,7 @@ import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import type { IOSPickerProps, WheelRowProps } from "@/components/wheel-picker/iosPicker.types";
 import { wheelSpinEaseOut } from "@/components/wheel-picker/wheelSpinEasing";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_VISIBLE = 9;
@@ -21,6 +22,7 @@ export const IOSPicker = <T,>({
   onActiveIndexChange,
   onSettled,
 }: IOSPickerProps<T>) => {
+  const shouldReduceMotion = useReducedMotion();
   const total = items.length;
   const centerIndex = Math.floor(visibleCount / 2);
   const position = useMotionValue(0);
@@ -74,6 +76,12 @@ export const IOSPicker = <T,>({
 
     const target = current + loops * total + delta;
 
+    if (shouldReduceMotion) {
+      position.set(target);
+      onSettled?.(items[winnerIndex]!, winnerIndex);
+      return;
+    }
+
     const controls = animate(position, target, {
       type: "tween",
       duration,
@@ -85,7 +93,17 @@ export const IOSPicker = <T,>({
     });
 
     return () => controls.stop();
-  }, [duration, items, loops, onSettled, position, spinning, total, winnerIndex]);
+  }, [
+    duration,
+    items,
+    loops,
+    onSettled,
+    position,
+    shouldReduceMotion,
+    spinning,
+    total,
+    winnerIndex,
+  ]);
 
   if (total === 0) {
     return null;
