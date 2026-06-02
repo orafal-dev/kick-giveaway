@@ -61,6 +61,7 @@ export const ChannelLanding = ({
               id="kick-channel"
               name="channel"
               autoComplete="off"
+              size={"2xl"}
               spellCheck={false}
               value={channelName}
               onChange={(event: ChangeEvent<HTMLInputElement>) =>
