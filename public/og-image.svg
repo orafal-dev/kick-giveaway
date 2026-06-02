@@ -12,5 +12,5 @@
   <circle cx="120" cy="500" r="12" fill="#47BFFF" opacity="0.9"/>
   <text x="100" y="300" fill="#ffffff" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="88" font-weight="700">kickaway.win</text>
   <text x="100" y="380" fill="#d4c4ff" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="42" font-weight="500">Free Kick.com giveaway tool for streamers</text>
-  <text x="100" y="460" fill="#a78bfa" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="28">Chat entrants · Wheel draw · Multiple winners</text>
+  <text x="100" y="460" fill="#a78bfa" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="28">Chat entrants &#183; Wheel draw &#183; Multiple winners</text>
 </svg>

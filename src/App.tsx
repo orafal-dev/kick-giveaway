@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { useTheme } from "next-themes";
+import { GiveawayAppShell } from "@/components/giveaway/GiveawayAppShell";
 import { ChannelLanding } from "@/components/giveaway/ChannelLanding";
 import { GiveawayConfetti } from "@/components/giveaway/GiveawayConfetti";
 import { ConnectionBar } from "@/components/giveaway/ConnectionBar";
@@ -84,6 +85,10 @@ function App() {
     onStartGiveaway: giveaway.handleStartGiveaway,
     onResetGiveaway: giveaway.handleReset,
   };
+
+  if (!giveaway.isPersistenceReady) {
+    return <GiveawayAppShell />;
+  }
 
   if (!giveaway.isChannelStepComplete) {
     return (
