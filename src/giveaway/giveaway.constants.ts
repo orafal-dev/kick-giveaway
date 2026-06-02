@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS: GiveawaySettings = {
   subscribersOnly: false,
   winnerConfirmationEnabled: true,
   confirmTimeSeconds: 60,
-  animationMode: "scramble",
+  animationMode: "wheel",
   animationDurationSeconds: 8,
 };
 
