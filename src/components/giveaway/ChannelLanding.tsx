@@ -71,6 +71,8 @@ export const ChannelLanding = ({
             />
             <Button
               type="submit"
+              size="2xl"
+              variant="kick"
               className="w-full"
               disabled={isConnecting}
               aria-label="Connect to Kick channel"
@@ -109,7 +111,10 @@ export const ChannelLanding = ({
       </section>
 
       <footer className="mt-8 text-center text-xs text-muted-foreground">
-        <p>Not affiliated with Kick.com. For entertainment giveaways on your stream.</p>
+        <p>
+          Not affiliated with Kick.com. For entertainment giveaways on your
+          stream.
+        </p>
       </footer>
     </article>
   );
