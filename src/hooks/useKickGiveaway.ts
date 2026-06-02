@@ -1,5 +1,8 @@
+import { useOpenPanel } from "@openpanel/nextjs";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { KickChatMessage } from "@/App.types";
+import { buildGiveawayStartedProperties } from "@/analytics/giveaway-events";
+import { openpanelConfig } from "@/config/openpanel";
 import { devMode } from "@/config/devMode";
 import { KICK_WS_URLS } from "@/constants";
 import {
@@ -40,6 +43,7 @@ import { getEligibleDrawPool, tryAddEntrant } from "@/services/kickEntrants";
 import { KickWebSocketManager } from "@/services/kickWebSocket";
 
 export const useKickGiveaway = () => {
+  const op = useOpenPanel();
   const [isPersistenceReady, setIsPersistenceReady] = useState(false);
   const [channelName, setChannelName] = useState("");
   const [settings, setSettings] = useState<GiveawaySettings>({
@@ -80,6 +84,7 @@ export const useKickGiveaway = () => {
   const channelSubscribersOnlyRef = useRef(channelSubscribersOnly);
   const giveawayStartedRef = useRef(giveawayStarted);
   const phaseRef = useRef(phase);
+  const hasTrackedGiveawayStartRef = useRef(false);
 
   const channelLabel = useMemo(
     () => normalizeValue(channelName),
@@ -328,6 +333,26 @@ export const useKickGiveaway = () => {
     setShowConfetti(false);
   }, []);
 
+  const trackGiveawayStarted = useCallback((): void => {
+    if (!openpanelConfig.enabled || hasTrackedGiveawayStartRef.current) {
+      return;
+    }
+
+    if (!channelLabel) {
+      return;
+    }
+
+    hasTrackedGiveawayStartRef.current = true;
+    op.track(
+      "giveaway_started",
+      buildGiveawayStartedProperties(channelLabel, settingsRef.current),
+    );
+  }, [channelLabel, op]);
+
+  const resetGiveawayStartTracking = useCallback((): void => {
+    hasTrackedGiveawayStartRef.current = false;
+  }, []);
+
   const seedDevEntrantsIfEnabled = useCallback((): void => {
     if (!devMode.enabled) {
       return;
@@ -433,6 +458,7 @@ export const useKickGiveaway = () => {
         if (giveawayStartedRef.current) {
           setPhase("collecting");
           seedDevEntrantsIfEnabled();
+          trackGiveawayStarted();
           return;
         }
 
@@ -456,6 +482,7 @@ export const useKickGiveaway = () => {
     giveawayStarted,
     handleKickMessage,
     seedDevEntrantsIfEnabled,
+    trackGiveawayStarted,
   ]);
 
   const handleStartGiveaway = useCallback(async (): Promise<void> => {
@@ -475,11 +502,13 @@ export const useKickGiveaway = () => {
 
     setPhase("collecting");
     seedDevEntrantsIfEnabled();
+    trackGiveawayStarted();
   }, [
     channelLabel,
     connectToChannel,
     connectionStatus,
     seedDevEntrantsIfEnabled,
+    trackGiveawayStarted,
   ]);
 
   const handleChannelLandingSubmit = useCallback(async (): Promise<void> => {
@@ -496,6 +525,7 @@ export const useKickGiveaway = () => {
   const handleChangeChannel = useCallback((): void => {
     wsRef.current?.disconnect();
     wsRef.current = null;
+    resetGiveawayStartTracking();
     setConnectionStatus("idle");
     setGiveawayStarted(false);
     setPhase("idle");
@@ -508,11 +538,12 @@ export const useKickGiveaway = () => {
     setDisplayName("");
     countdownActiveRef.current = false;
     setIsCountdownActive(false);
-  }, []);
+  }, [resetGiveawayStartTracking]);
 
   const handleClearAllData = useCallback((): void => {
     wsRef.current?.disconnect();
     wsRef.current = null;
+    resetGiveawayStartTracking();
     clearPersistedState();
     setChannelName("");
     setSettings({ ...DEFAULT_SETTINGS });
@@ -535,9 +566,10 @@ export const useKickGiveaway = () => {
     countdownActiveRef.current = false;
     setIsCountdownActive(false);
     setCountdownSeconds(DEFAULT_SETTINGS.confirmTimeSeconds);
-  }, []);
+  }, [resetGiveawayStartTracking]);
 
   const handleReset = useCallback((): void => {
+    resetGiveawayStartTracking();
     setGiveawayStarted(false);
     setPhase("idle");
     setEntrants([]);
@@ -559,7 +591,7 @@ export const useKickGiveaway = () => {
     countdownActiveRef.current = false;
     setIsCountdownActive(false);
     setCountdownSeconds(settings.confirmTimeSeconds);
-  }, [settings.confirmTimeSeconds]);
+  }, [resetGiveawayStartTracking, settings.confirmTimeSeconds]);
 
   const finalizeDraw = useCallback(
     (winner: Entrant): void => {
