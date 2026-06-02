@@ -19,6 +19,7 @@ import type {
   GiveawaySettings,
 } from "@/giveaway/giveaway.types";
 import {
+  ANIMATION_SELECT_ITEMS,
   MAX_CONFIRM_SECONDS,
   MAX_MULTIPLIER,
   MAX_WINNERS_COUNT,
@@ -58,12 +59,6 @@ export const SettingsForm = ({
 
     onUpdateSettings({ animationMode: value as AnimationMode });
   };
-
-  const animationItems = [
-    { label: "Wheel", value: "wheel" },
-    { label: "Classic", value: "classic" },
-    { label: "Scramble", value: "scramble" },
-  ] as const;
 
   return (
     <div className="flex flex-col gap-4">
@@ -247,13 +242,13 @@ export const SettingsForm = ({
             <Select
               value={settings.animationMode}
               onValueChange={handleAnimationChange}
-              items={animationItems}
+              items={ANIMATION_SELECT_ITEMS}
             >
               <SelectTrigger aria-label="Draw animation mode" className="h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectPopup>
-                {animationItems.map(({ label, value }) => (
+                {ANIMATION_SELECT_ITEMS.map(({ label, value }) => (
                   <SelectItem key={value} value={value}>
                     {label}
                   </SelectItem>

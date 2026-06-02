@@ -1,4 +1,5 @@
 import { DrawAnimation } from "@/components/giveaway/DrawAnimation";
+import { WheelPickerDrawAnimation } from "@/components/giveaway/WheelPickerDrawAnimation";
 import type { AnimationMode, Entrant } from "@/giveaway/giveaway.types";
 
 interface DrawingOverlayProps {
@@ -24,6 +25,8 @@ export const DrawingOverlay = ({
     return null;
   }
 
+  const isWheelMode = mode === "wheel";
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
@@ -36,9 +39,8 @@ export const DrawingOverlay = ({
           Drawing...
         </p>
 
-        {mode === "wheel" ? (
-          <DrawAnimation
-            mode={mode}
+        {isWheelMode ? (
+          <WheelPickerDrawAnimation
             entrants={entrants}
             winner={winner}
             isActive={isVisible}
@@ -55,7 +57,7 @@ export const DrawingOverlay = ({
           </p>
         )}
 
-        {mode !== "wheel" ? (
+        {!isWheelMode ? (
           <DrawAnimation
             mode={mode}
             entrants={entrants}
@@ -65,7 +67,12 @@ export const DrawingOverlay = ({
             onComplete={onComplete}
           />
         ) : (
-          <p className="mt-4 text-2xl font-semibold text-primary">{displayName || "..."}</p>
+          <p
+            className="mt-4 text-2xl font-semibold text-primary"
+            aria-live="polite"
+          >
+            {displayName || "..."}
+          </p>
         )}
       </div>
     </div>
