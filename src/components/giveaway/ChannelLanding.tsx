@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/config/site";
+import { Label } from "../ui/label";
 
 interface ChannelLandingProps {
   channelName: string;
@@ -54,9 +55,7 @@ export const ChannelLanding = ({
         </CardHeader>
         <CardContent>
           <form className="space-y-3" onSubmit={handleSubmit}>
-            <label htmlFor="kick-channel" className="sr-only">
-              Kick channel name
-            </label>
+            <Label htmlFor="kick-channel">Kick channel name</Label>
             <Input
               id="kick-channel"
               name="channel"
