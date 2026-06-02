@@ -1,12 +1,11 @@
-/** Share of spin time used for the fast roll (remainder eases onto the winner). */
-const FAST_PHASE_END = 0.32;
-/** How far the wheel travels during the fast roll phase. */
-const FAST_PHASE_PROGRESS = 0.9;
-
 /**
- * Fast roll then a short smooth deceleration onto the winner.
- * Avoids expo-style easing that crawls for most of the duration.
+ * Smooth ease-out: velocity is highest at the start and decreases continuously
+ * to zero at the end (no phased segments — avoids a sudden slowdown).
+ *
+ * Higher power = faster initial roll, longer gentle tail (4–5 works well with the barrel).
  */
+const EASE_OUT_POWER = 4.5;
+
 export const wheelSpinEaseOut = (t: number): number => {
   if (t <= 0) {
     return 0;
@@ -16,12 +15,5 @@ export const wheelSpinEaseOut = (t: number): number => {
     return 1;
   }
 
-  if (t < FAST_PHASE_END) {
-    return (t / FAST_PHASE_END) * FAST_PHASE_PROGRESS;
-  }
-
-  const localT = (t - FAST_PHASE_END) / (1 - FAST_PHASE_END);
-  const eased = 1 - (1 - localT) ** 3;
-
-  return FAST_PHASE_PROGRESS + (1 - FAST_PHASE_PROGRESS) * eased;
+  return 1 - (1 - t) ** EASE_OUT_POWER;
 };
