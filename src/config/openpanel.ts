@@ -1,8 +1,9 @@
 /** OpenPanel analytics — client + proxy configuration. */
-export const OPENPANEL_PROXY_PATH = "/api/op" as const;
+/** Neutral first-party path (avoids common `/api/op` + `op1.js` blocklists). */
+export const OPENPANEL_PROXY_PATH = "/api/kickaway/session" as const;
 
 export const OPENPANEL_PROXY_SCRIPT_URL =
-  `${OPENPANEL_PROXY_PATH}/op1.js` as const;
+  `${OPENPANEL_PROXY_PATH}/client.js` as const;
 
 export const openpanelConfig = {
   clientId: process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID ?? "",
