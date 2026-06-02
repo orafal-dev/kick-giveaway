@@ -40,12 +40,18 @@ export const GiveawaySidebar = (props: GiveawaySidebarProps) => {
           type="button"
           className="w-full"
           size="2xl"
-          onClick={props.onStartGiveaway}
+          onClick={
+            props.giveawayStarted ? props.onResetGiveaway : props.onStartGiveaway
+          }
           disabled={props.connectionStatus === "connecting"}
-          aria-label="Start giveaway and connect to chat"
-          variant="kick"
+          aria-label={
+            props.giveawayStarted
+              ? "Reset giveaway to before start"
+              : "Start giveaway and connect to chat"
+          }
+          variant={props.giveawayStarted ? "secondary" : "kick"}
         >
-          {props.giveawayStarted ? "Giveaway Running" : "Start Giveaway"}
+          {props.giveawayStarted ? "Reset" : "Start Giveaway"}
         </Button>
       </SidebarFooter>
 

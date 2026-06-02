@@ -1,5 +1,7 @@
 import {
   DEFAULT_SETTINGS,
+  MAX_ANIMATION_DURATION_SECONDS,
+  MIN_ANIMATION_DURATION_SECONDS,
   STORAGE_KEY,
   THEME_STORAGE_KEY,
 } from "@/giveaway/giveaway.constants";
@@ -9,10 +11,62 @@ import type {
   GiveawaySettings,
   PersistedGiveawayState,
   ThemeMode,
+  WinnerRecord,
 } from "@/giveaway/giveaway.types";
 
 const isAnimationMode = (value: unknown): value is AnimationMode =>
   value === "wheel" || value === "classic" || value === "scramble";
+
+const parseWinner = (raw: unknown): WinnerRecord | null => {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const data = raw as Record<string, unknown>;
+
+  if (typeof data.username !== "string") {
+    return null;
+  }
+
+  const confirmationMessages = Array.isArray(data.confirmationMessages)
+    ? data.confirmationMessages
+        .map((entry) => {
+          if (!entry || typeof entry !== "object") {
+            return null;
+          }
+
+          const item = entry as Record<string, unknown>;
+          if (
+            typeof item.message !== "string" ||
+            typeof item.timestamp !== "number"
+          ) {
+            return null;
+          }
+
+          return {
+            message: item.message,
+            timestamp: item.timestamp,
+          };
+        })
+        .filter((entry): entry is WinnerRecord["confirmationMessages"][number] =>
+          entry !== null,
+        )
+    : [];
+
+  return {
+    username: data.username,
+    userId:
+      typeof data.userId === "string"
+        ? data.userId
+        : data.username,
+    confirmedAt:
+      typeof data.confirmedAt === "number" ? data.confirmedAt : null,
+    noShow: data.noShow === true,
+    drawIndex:
+      typeof data.drawIndex === "number" ? data.drawIndex : 0,
+    confirmationMessages,
+  };
+};
 
 const isGiveawayPhase = (value: unknown): value is GiveawayPhase =>
   value === "idle" ||
@@ -62,6 +116,13 @@ const parseSettings = (raw: unknown): GiveawaySettings => {
     animationMode: isAnimationMode(data.animationMode)
       ? data.animationMode
       : DEFAULT_SETTINGS.animationMode,
+    animationDurationSeconds:
+      typeof data.animationDurationSeconds === "number"
+        ? Math.max(
+            MIN_ANIMATION_DURATION_SECONDS,
+            Math.min(MAX_ANIMATION_DURATION_SECONDS, data.animationDurationSeconds),
+          )
+        : DEFAULT_SETTINGS.animationDurationSeconds,
   };
 };
 
@@ -89,12 +150,9 @@ export const loadPersistedState = (): PersistedGiveawayState | null => {
           typeof entrant === "object" &&
           typeof (entrant as { username?: string }).username === "string",
       ),
-      winners: winners.filter(
-        (winner): winner is PersistedGiveawayState["winners"][number] =>
-          Boolean(winner) &&
-          typeof winner === "object" &&
-          typeof (winner as { username?: string }).username === "string",
-      ),
+      winners: winners
+        .map(parseWinner)
+        .filter((winner): winner is WinnerRecord => winner !== null),
       phase: isGiveawayPhase(parsed.phase) ? parsed.phase : "idle",
       pendingWinner:
         parsed.pendingWinner &&
@@ -102,6 +160,11 @@ export const loadPersistedState = (): PersistedGiveawayState | null => {
         typeof (parsed.pendingWinner as { username?: string }).username === "string"
           ? {
               username: (parsed.pendingWinner as { username: string }).username,
+              userId:
+                typeof (parsed.pendingWinner as { userId?: string }).userId ===
+                "string"
+                  ? (parsed.pendingWinner as { userId: string }).userId
+                  : (parsed.pendingWinner as { username: string }).username,
               startedAt:
                 typeof (parsed.pendingWinner as { startedAt?: number }).startedAt ===
                 "number"

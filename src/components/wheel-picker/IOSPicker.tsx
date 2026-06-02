@@ -1,6 +1,7 @@
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import type { IOSPickerProps, WheelRowProps } from "@/components/wheel-picker/iosPicker.types";
+import { wheelSpinEaseOut } from "@/components/wheel-picker/wheelSpinEasing";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_VISIBLE = 9;
@@ -74,10 +75,9 @@ export const IOSPicker = <T,>({
     const target = current + loops * total + delta;
 
     const controls = animate(position, target, {
-      type: "spring",
-      bounce: 0,
+      type: "tween",
       duration,
-      visualDuration: duration,
+      ease: wheelSpinEaseOut,
     });
 
     void controls.finished.then(() => {
@@ -180,7 +180,10 @@ const WheelRow = ({
 
   const scale = useTransform(offset, [-5, 0, 5], [0.72, 1, 0.72]);
 
-  const y = useTransform(offset, (rowOffset) => rowOffset * itemHeight);
+  const y = useTransform(
+    offset,
+    (rowOffset) => rowOffset * itemHeight - itemHeight / 2,
+  );
 
   return (
     <motion.div

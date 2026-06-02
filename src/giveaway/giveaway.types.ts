@@ -20,6 +20,8 @@ export interface GiveawaySettings {
   winnerConfirmationEnabled: boolean;
   confirmTimeSeconds: number;
   animationMode: AnimationMode;
+  /** Total draw animation time (wheel spin + hold, or name roll). */
+  animationDurationSeconds: number;
 }
 
 export interface Entrant {
@@ -32,14 +34,25 @@ export interface Entrant {
   weight: number;
 }
 
+export interface WinnerConfirmationMessage {
+  message: string;
+  timestamp: number;
+}
+
 export interface WinnerRecord {
   username: string;
+  userId: string;
   confirmedAt: number | null;
+  /** True when confirmation timed out without a chat response. */
+  noShow: boolean;
   drawIndex: number;
+  /** Chat messages from the winner after they were drawn (confirmation window). */
+  confirmationMessages: WinnerConfirmationMessage[];
 }
 
 export interface PendingWinner {
   username: string;
+  userId: string;
   startedAt: number;
 }
 

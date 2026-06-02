@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="80" y1="40" x2="1120" y2="590" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#863bff"/>
+      <stop offset="1" stop-color="#1a0a3d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="180" cy="120" r="18" fill="#53FC18" opacity="0.9"/>
+  <circle cx="1020" cy="90" r="14" fill="#FFD93D" opacity="0.9"/>
+  <circle cx="1080" cy="520" r="20" fill="#FF6B9D" opacity="0.85"/>
+  <circle cx="120" cy="500" r="12" fill="#47BFFF" opacity="0.9"/>
+  <text x="100" y="300" fill="#ffffff" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="88" font-weight="700">kickaway.win</text>
+  <text x="100" y="380" fill="#d4c4ff" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="42" font-weight="500">Free Kick.com giveaway tool for streamers</text>
+  <text x="100" y="460" fill="#a78bfa" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="28">Chat entrants · Wheel draw · Multiple winners</text>
+</svg>

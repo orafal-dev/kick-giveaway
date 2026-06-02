@@ -89,11 +89,15 @@ function App() {
     channelModeMessage: giveaway.channelModeMessage,
     onUpdateSettings: giveaway.updateSettings,
     onStartGiveaway: giveaway.handleStartGiveaway,
+    onResetGiveaway: giveaway.handleReset,
   };
 
   if (!giveaway.isChannelStepComplete) {
     return (
-      <main className="mx-auto flex min-h-svh w-full max-w-xl flex-col justify-center p-4 md:p-8">
+      <main
+        id="main-content"
+        className="mx-auto flex min-h-svh w-full max-w-xl flex-col justify-center p-4 md:p-8"
+      >
         {giveaway.showConfetti ? (
           <GiveawayConfetti
             width={windowSize.width}
@@ -132,13 +136,19 @@ function App() {
       <GiveawaySidebar {...settingsSidebarProps} />
 
       <SidebarInset>
-        <div className="flex min-h-svh flex-col gap-4 p-4 md:p-6">
+        <div
+          id="main-content"
+          className="flex min-h-svh flex-col gap-4 p-4 md:p-6"
+        >
           <div className="flex items-start gap-3">
             <SidebarTrigger
               className="mt-0.5 shrink-0"
               aria-label="Toggle settings sidebar"
             />
             <header className="min-w-0 flex-1 space-y-1">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Kick giveaway
+              </p>
               <h1 className="truncate text-2xl font-bold tracking-tight md:text-3xl">
                 kickaway.win
               </h1>
@@ -168,7 +178,6 @@ function App() {
               winnersTargetReached={giveaway.winnersTargetReached}
               winnersCount={giveaway.settings.winnersCount}
               onDrawWinner={giveaway.handleDrawWinner}
-              onReset={giveaway.handleReset}
             />
 
             <WinnersPanel
@@ -176,6 +185,8 @@ function App() {
               displayName={giveaway.displayName}
               isDrawing={giveaway.isDrawing}
               pendingWinner={giveaway.pendingWinner}
+              pendingWinnerMessages={giveaway.pendingWinnerMessages}
+              recentChatMessages={giveaway.lastMessages}
               countdownSeconds={giveaway.countdownSeconds}
               isCountdownActive={giveaway.isCountdownActive}
               winnerConfirmationEnabled={
@@ -195,6 +206,7 @@ function App() {
         <DrawingOverlay
           isVisible={giveaway.isDrawing}
           mode={giveaway.settings.animationMode}
+          animationDurationSeconds={giveaway.settings.animationDurationSeconds}
           entrants={giveaway.drawPool}
           winner={giveaway.drawTarget}
           displayName={giveaway.displayName}
