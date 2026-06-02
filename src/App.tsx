@@ -87,6 +87,8 @@ function App() {
     giveawayStarted: giveaway.giveawayStarted,
     connectionStatus: giveaway.connectionStatus,
     channelModeMessage: giveaway.channelModeMessage,
+    hasStoredParticipantsOrWinners:
+      giveaway.entrants.length > 0 || giveaway.winners.length > 0,
     onUpdateSettings: giveaway.updateSettings,
     onStartGiveaway: giveaway.handleStartGiveaway,
     onResetGiveaway: giveaway.handleReset,

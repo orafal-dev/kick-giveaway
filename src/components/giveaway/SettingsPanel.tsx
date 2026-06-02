@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { Button } from "@/components/ui/button";
+import { GiveawayActionButtons } from "@/components/giveaway/GiveawayActionButtons";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -36,6 +36,7 @@ export interface SettingsPanelProps {
   giveawayStarted: boolean;
   connectionStatus: "idle" | "connecting" | "connected";
   channelModeMessage: string;
+  hasStoredParticipantsOrWinners: boolean;
   onUpdateSettings: (partial: Partial<GiveawaySettings>) => void;
   onStartGiveaway: () => void;
   onResetGiveaway: () => void;
@@ -55,6 +56,7 @@ export const SettingsForm = ({
   onUpdateSettings,
   onStartGiveaway,
   onResetGiveaway,
+  hasStoredParticipantsOrWinners,
   showStartButton = true,
 }: SettingsPanelProps) => {
   const handleAnimationChange = (value: string | null): void => {
@@ -315,21 +317,13 @@ export const SettingsForm = ({
 
       {showStartButton ? (
         <div className="space-y-2">
-          <Button
-            type="button"
-            className="w-full"
-            onClick={giveawayStarted ? onResetGiveaway : onStartGiveaway}
-            disabled={connectionStatus === "connecting"}
-            aria-label={
-              giveawayStarted
-                ? "Reset giveaway to before start"
-                : "Start giveaway and connect to chat"
-            }
-            variant={giveawayStarted ? "secondary" : "kick"}
-            size="2xl"
-          >
-            {giveawayStarted ? "Reset" : "Start Giveaway"}
-          </Button>
+          <GiveawayActionButtons
+            giveawayStarted={giveawayStarted}
+            connectionStatus={connectionStatus}
+            hasStoredParticipantsOrWinners={hasStoredParticipantsOrWinners}
+            onStartGiveaway={onStartGiveaway}
+            onResetGiveaway={onResetGiveaway}
+          />
           {!giveawayStarted ? (
             <p className="text-xs text-muted-foreground">
               Press &quot;Start&quot; to connect to the chat.
