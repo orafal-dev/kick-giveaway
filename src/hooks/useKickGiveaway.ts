@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { KickChatMessage } from "@/App.types";
 import { devMode } from "@/config/devMode";
 import { KICK_WS_URLS } from "@/constants";
@@ -39,38 +39,20 @@ import {
 import { getEligibleDrawPool, tryAddEntrant } from "@/services/kickEntrants";
 import { KickWebSocketManager } from "@/services/kickWebSocket";
 
-const createInitialState = () => {
-  const persisted = loadPersistedState();
-
-  return {
-    channelName: persisted?.channelName ?? "",
-    settings: persisted?.settings ?? { ...DEFAULT_SETTINGS },
-    entrants: persisted?.entrants ?? [],
-    winners: persisted?.winners ?? [],
-    phase: persisted?.phase ?? "idle",
-    pendingWinner: persisted?.pendingWinner ?? null,
-    drawCount: persisted?.drawCount ?? 0,
-    isChannelStepComplete: Boolean(persisted?.channelName?.trim()),
-  };
-};
-
 export const useKickGiveaway = () => {
-  const initial = useMemo(() => createInitialState(), []);
-
-  const [channelName, setChannelName] = useState(initial.channelName);
-  const [settings, setSettings] = useState<GiveawaySettings>(initial.settings);
-  const [entrants, setEntrants] = useState<Entrant[]>(initial.entrants);
-  const [winners, setWinners] = useState<WinnerRecord[]>(initial.winners);
-  const [phase, setPhase] = useState<GiveawayPhase>(initial.phase);
-  const [pendingWinner, setPendingWinner] = useState<PendingWinner | null>(
-    initial.pendingWinner,
-  );
-  const [drawCount, setDrawCount] = useState(initial.drawCount);
+  const [isPersistenceReady, setIsPersistenceReady] = useState(false);
+  const [channelName, setChannelName] = useState("");
+  const [settings, setSettings] = useState<GiveawaySettings>({
+    ...DEFAULT_SETTINGS,
+  });
+  const [entrants, setEntrants] = useState<Entrant[]>([]);
+  const [winners, setWinners] = useState<WinnerRecord[]>([]);
+  const [phase, setPhase] = useState<GiveawayPhase>("idle");
+  const [pendingWinner, setPendingWinner] = useState<PendingWinner | null>(null);
+  const [drawCount, setDrawCount] = useState(0);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("idle");
-  const [isChannelStepComplete, setIsChannelStepComplete] = useState(
-    initial.isChannelStepComplete,
-  );
+  const [isChannelStepComplete, setIsChannelStepComplete] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [channelModeMessage, setChannelModeMessage] = useState("");
   const [channelSubscribersOnly, setChannelSubscribersOnly] = useState(false);
@@ -83,7 +65,7 @@ export const useKickGiveaway = () => {
   const [displayName, setDisplayName] = useState("");
   const [showConfetti, setShowConfetti] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(
-    initial.settings.confirmTimeSeconds,
+    DEFAULT_SETTINGS.confirmTimeSeconds,
   );
   const [isCountdownActive, setIsCountdownActive] = useState(false);
   const [giveawayStarted, setGiveawayStarted] = useState(false);
@@ -114,6 +96,23 @@ export const useKickGiveaway = () => {
   const winnersTargetReached =
     acceptedWinnersCount >= settings.winnersCount;
 
+  useLayoutEffect(() => {
+    const persisted = loadPersistedState();
+    if (persisted) {
+      setChannelName(persisted.channelName);
+      setSettings(persisted.settings);
+      setEntrants(persisted.entrants);
+      setWinners(persisted.winners);
+      setPhase(persisted.phase);
+      setPendingWinner(persisted.pendingWinner);
+      setDrawCount(persisted.drawCount);
+      setCountdownSeconds(persisted.settings.confirmTimeSeconds);
+      setIsChannelStepComplete(Boolean(persisted.channelName.trim()));
+    }
+
+    setIsPersistenceReady(true);
+  }, []);
+
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
@@ -143,6 +142,10 @@ export const useKickGiveaway = () => {
   }, [phase]);
 
   useEffect(() => {
+    if (!isPersistenceReady) {
+      return;
+    }
+
     savePersistedState({
       channelName,
       settings,
@@ -153,6 +156,7 @@ export const useKickGiveaway = () => {
       drawCount,
     });
   }, [
+    isPersistenceReady,
     channelName,
     settings,
     entrants,
@@ -696,6 +700,7 @@ export const useKickGiveaway = () => {
     pendingWinner,
     drawCount,
     connectionStatus,
+    isPersistenceReady,
     isChannelStepComplete,
     errorMessage,
     channelModeMessage,

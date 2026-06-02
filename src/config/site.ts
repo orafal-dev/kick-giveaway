@@ -20,4 +20,4 @@ export const SITE_KEYWORDS = [
   "kickaway",
 ].join(", ");
 
-export const SITE_OG_IMAGE = `${SITE_URL}/og-image.svg`;
+export const SITE_OG_IMAGE = `${SITE_URL}/og-image.png`;
