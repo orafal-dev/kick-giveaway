@@ -57,14 +57,25 @@ export const WheelPickerDrawAnimation = ({
     );
   }, [barrel.length, isActive, timings.wheelSpinDurationSec]);
 
-  useEffect(() => {
-    return () => {
-      if (holdTimeoutRef.current) {
-        clearTimeout(holdTimeoutRef.current);
-        holdTimeoutRef.current = null;
-      }
-    };
+  const clearHoldTimeout = useCallback((): void => {
+    const timeoutId = holdTimeoutRef.current;
+    holdTimeoutRef.current = null;
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }, []);
+
+  useEffect(() => {
+    if (isActive) {
+      return;
+    }
+
+    clearHoldTimeout();
+  }, [clearHoldTimeout, isActive]);
+
+  useEffect(() => {
+    return clearHoldTimeout;
+  }, [clearHoldTimeout]);
 
   const handleActiveIndexChange = useCallback(
     (barrelIndex: number) => {
@@ -78,16 +89,18 @@ export const WheelPickerDrawAnimation = ({
 
   const handleSettled = useCallback(() => {
     onDisplayChange(winner.username);
-
-    if (holdTimeoutRef.current) {
-      clearTimeout(holdTimeoutRef.current);
-    }
-
+    clearHoldTimeout();
     holdTimeoutRef.current = setTimeout(() => {
       holdTimeoutRef.current = null;
       onComplete(winner);
     }, timings.wheelPostSpinHoldMs);
-  }, [onComplete, onDisplayChange, timings.wheelPostSpinHoldMs, winner]);
+  }, [
+    clearHoldTimeout,
+    onComplete,
+    onDisplayChange,
+    timings.wheelPostSpinHoldMs,
+    winner,
+  ]);
 
   if (!isActive || winnerBarrelIndex < 0 || barrel.length === 0) {
     return null;

@@ -76,13 +76,8 @@ export const WinnersPanel = ({
               to chat
               {isCountdownActive ? ` (${countdownSeconds}s left)` : ""}.
             </p>
-            <Button
-              type="button"
-              size="sm"
-              onClick={onManualConfirm}
-              aria-label="Manually confirm winner"
-            >
-              OK
+            <Button type="button" size="sm" onClick={onManualConfirm}>
+              Confirm winner
             </Button>
             {pendingWinnerMessages.length > 0 ? (
               <WinnerChatMessages

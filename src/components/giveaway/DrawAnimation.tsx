@@ -78,7 +78,7 @@ export const DrawAnimation = ({
     onComplete,
     onDisplayChange,
     timings,
-    winner.username,
+    winner,
   ]);
 
   return null;
