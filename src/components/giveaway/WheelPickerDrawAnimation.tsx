@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { IOSPicker } from "@/components/wheel-picker/IOSPicker";
 import { getDrawAnimationTimings } from "@/giveaway/animationTiming";
 import type { Entrant } from "@/giveaway/giveaway.types";
-import { getSpinLoopCount, getWinnerIndex } from "@/giveaway/wheelPickerSpin";
+import {
+  buildWheelBarrel,
+  getSpinLoopCountForDuration,
+  getWinnerBarrelIndex,
+} from "@/giveaway/wheelPickerBarrel";
 
 interface WheelPickerDrawAnimationProps {
   animationDurationSeconds: number;
@@ -30,6 +34,29 @@ export const WheelPickerDrawAnimation = ({
     [animationDurationSeconds],
   );
 
+  const barrel = useMemo(() => buildWheelBarrel(entrants), [entrants]);
+
+  const barrelEntrants = useMemo(
+    () => barrel.map((slot) => slot.entrant),
+    [barrel],
+  );
+
+  const winnerBarrelIndex = useMemo(
+    () => getWinnerBarrelIndex(barrel, winner.userId),
+    [barrel, winner.userId],
+  );
+
+  const loops = useMemo(() => {
+    if (!isActive) {
+      return 6;
+    }
+
+    return getSpinLoopCountForDuration(
+      barrel.length,
+      timings.wheelSpinDurationSec,
+    );
+  }, [barrel.length, isActive, timings.wheelSpinDurationSec]);
+
   useEffect(() => {
     return () => {
       if (holdTimeoutRef.current) {
@@ -39,24 +66,14 @@ export const WheelPickerDrawAnimation = ({
     };
   }, []);
 
-  const winnerIndex = useMemo(
-    () => getWinnerIndex(entrants, winner.userId),
-    [entrants, winner.userId],
-  );
-
-  const loops = useMemo(
-    () => (isActive ? getSpinLoopCount() : 6),
-    [isActive, winner.userId],
-  );
-
   const handleActiveIndexChange = useCallback(
-    (index: number) => {
-      const entrant = entrants[index];
-      if (entrant) {
-        onDisplayChange(entrant.username);
+    (barrelIndex: number) => {
+      const slot = barrel[barrelIndex];
+      if (slot) {
+        onDisplayChange(slot.entrant.username);
       }
     },
-    [entrants, onDisplayChange],
+    [barrel, onDisplayChange],
   );
 
   const handleSettled = useCallback(() => {
@@ -72,19 +89,19 @@ export const WheelPickerDrawAnimation = ({
     }, timings.wheelPostSpinHoldMs);
   }, [onComplete, onDisplayChange, timings.wheelPostSpinHoldMs, winner]);
 
-  if (!isActive || winnerIndex < 0 || entrants.length === 0) {
+  if (!isActive || winnerBarrelIndex < 0 || barrel.length === 0) {
     return null;
   }
 
   return (
     <IOSPicker
-      items={entrants}
+      items={barrelEntrants}
       renderItem={(entrant, active) => (
         <span className={active ? "font-semibold" : "font-normal"}>
           {entrant.username}
         </span>
       )}
-      winnerIndex={winnerIndex}
+      winnerIndex={winnerBarrelIndex}
       spinning={isActive}
       visibleCount={WHEEL_VISIBLE_COUNT}
       itemHeight={WHEEL_ITEM_HEIGHT_PX}
