@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { OpenPanelComponent } from "@openpanel/nextjs";
 import Script from "next/script";
 import { siteMetadata, siteViewport } from "@/app/metadata";
 import { ThemeProvider } from "@/components/theme-provider";
+import { openpanelConfig } from "@/config/openpanel";
 import { SITE_NAME, SITE_URL } from "@/config/site";
 import "./globals.css";
 
@@ -73,6 +75,14 @@ const RootLayout = ({ children }: RootLayoutProps) => {
             </p>
           </main>
         </noscript>
+        {openpanelConfig.enabled ? (
+          <OpenPanelComponent
+            clientId={openpanelConfig.clientId}
+            apiUrl={openpanelConfig.proxyPath}
+            scriptUrl={openpanelConfig.scriptUrl}
+            trackScreenViews
+          />
+        ) : null}
         <ThemeProvider>{children}</ThemeProvider>
         <Script
           id="structured-data"
