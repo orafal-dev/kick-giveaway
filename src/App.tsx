@@ -1,5 +1,8 @@
+"use client";
+
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
+import { useTheme } from "next-themes";
 import { ChannelLanding } from "@/components/giveaway/ChannelLanding";
 import { GiveawayConfetti } from "@/components/giveaway/GiveawayConfetti";
 import { ConnectionBar } from "@/components/giveaway/ConnectionBar";
@@ -12,10 +15,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { getInitialTheme, saveTheme } from "@/giveaway/giveawayStorage";
 import { useKickGiveaway } from "@/hooks/useKickGiveaway";
-
-type ThemeMode = "dark" | "light";
 
 const isEditableElement = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {
@@ -33,16 +33,12 @@ const isEditableElement = (target: EventTarget | null): boolean => {
 function App() {
   const giveaway = useKickGiveaway();
   const { finalizeDraw } = giveaway;
-  const [themeMode, setThemeMode] = useState<ThemeMode>(() =>
-    getInitialTheme(),
-  );
+  const { resolvedTheme, setTheme } = useTheme();
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
   const handleToggleTheme = useCallback((): void => {
-    setThemeMode((previousMode) =>
-      previousMode === "dark" ? "light" : "dark",
-    );
-  }, []);
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  }, [resolvedTheme, setTheme]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -60,11 +56,6 @@ function App() {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", themeMode === "dark");
-    saveTheme(themeMode);
-  }, [themeMode]);
 
   useHotkey("D", (event) => {
     if (isEditableElement(event.target)) {
