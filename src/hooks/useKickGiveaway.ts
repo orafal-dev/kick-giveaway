@@ -47,8 +47,7 @@ const createInitialState = () => {
     settings: persisted?.settings ?? { ...DEFAULT_SETTINGS },
     entrants: persisted?.entrants ?? [],
     winners: persisted?.winners ?? [],
-    phase:
-      (persisted?.phase === "connecting" ? "idle" : persisted?.phase) ?? "idle",
+    phase: persisted?.phase ?? "idle",
     pendingWinner: persisted?.pendingWinner ?? null,
     drawCount: persisted?.drawCount ?? 0,
     isChannelStepComplete: Boolean(persisted?.channelName?.trim()),
@@ -87,12 +86,7 @@ export const useKickGiveaway = () => {
     initial.settings.confirmTimeSeconds,
   );
   const [isCountdownActive, setIsCountdownActive] = useState(false);
-  const [giveawayStarted, setGiveawayStarted] = useState(
-    initial.phase === "collecting" ||
-      initial.phase === "drawing" ||
-      initial.phase === "awaitingConfirmation" ||
-      initial.phase === "completed",
-  );
+  const [giveawayStarted, setGiveawayStarted] = useState(false);
 
   const wsRef = useRef<KickWebSocketManager | null>(null);
   const settingsRef = useRef(settings);

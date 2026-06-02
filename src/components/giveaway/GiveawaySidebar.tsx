@@ -3,7 +3,7 @@ import {
   SettingsForm,
   type SettingsPanelProps,
 } from "@/components/giveaway/SettingsPanel";
-import { Button } from "@/components/ui/button";
+import { GiveawayActionButtons } from "@/components/giveaway/GiveawayActionButtons";
 import {
   Sidebar,
   SidebarContent,
@@ -36,23 +36,15 @@ export const GiveawaySidebar = (props: GiveawaySidebarProps) => {
       </SidebarContent>
 
       <SidebarFooter className="gap-2">
-        <Button
-          type="button"
-          className="w-full"
-          size="2xl"
-          onClick={
-            props.giveawayStarted ? props.onResetGiveaway : props.onStartGiveaway
+        <GiveawayActionButtons
+          giveawayStarted={props.giveawayStarted}
+          connectionStatus={props.connectionStatus}
+          hasStoredParticipantsOrWinners={
+            props.hasStoredParticipantsOrWinners
           }
-          disabled={props.connectionStatus === "connecting"}
-          aria-label={
-            props.giveawayStarted
-              ? "Reset giveaway to before start"
-              : "Start giveaway and connect to chat"
-          }
-          variant={props.giveawayStarted ? "secondary" : "kick"}
-        >
-          {props.giveawayStarted ? "Reset" : "Start Giveaway"}
-        </Button>
+          onStartGiveaway={props.onStartGiveaway}
+          onResetGiveaway={props.onResetGiveaway}
+        />
       </SidebarFooter>
 
       <SidebarRail />

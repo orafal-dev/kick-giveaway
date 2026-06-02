@@ -126,6 +126,21 @@ const parseSettings = (raw: unknown): GiveawaySettings => {
   };
 };
 
+/** WebSockets do not survive reload; drop in-flight giveaway session state. */
+export const hydratePersistedStateAfterReload = (
+  persisted: PersistedGiveawayState,
+): PersistedGiveawayState => {
+  if (persisted.phase === "idle") {
+    return persisted;
+  }
+
+  return {
+    ...persisted,
+    phase: "idle",
+    pendingWinner: null,
+  };
+};
+
 export const loadPersistedState = (): PersistedGiveawayState | null => {
   if (typeof window === "undefined") {
     return null;
@@ -141,7 +156,7 @@ export const loadPersistedState = (): PersistedGiveawayState | null => {
     const entrants = Array.isArray(parsed.entrants) ? parsed.entrants : [];
     const winners = Array.isArray(parsed.winners) ? parsed.winners : [];
 
-    return {
+    const loaded: PersistedGiveawayState = {
       channelName: typeof parsed.channelName === "string" ? parsed.channelName : "",
       settings: parseSettings(parsed.settings),
       entrants: entrants.filter(
@@ -174,6 +189,8 @@ export const loadPersistedState = (): PersistedGiveawayState | null => {
           : null,
       drawCount: typeof parsed.drawCount === "number" ? parsed.drawCount : 0,
     };
+
+    return hydratePersistedStateAfterReload(loaded);
   } catch {
     return null;
   }
