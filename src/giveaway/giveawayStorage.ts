@@ -4,6 +4,7 @@ import {
   MIN_ANIMATION_DURATION_SECONDS,
   STORAGE_KEY,
 } from "@/giveaway/giveaway.constants";
+import { parseIgnoredNicks } from "@/giveaway/ignoredNicks.utils";
 import type {
   AnimationMode,
   GiveawayPhase,
@@ -121,6 +122,7 @@ const parseSettings = (raw: unknown): GiveawaySettings => {
             Math.min(MAX_ANIMATION_DURATION_SECONDS, data.animationDurationSeconds),
           )
         : DEFAULT_SETTINGS.animationDurationSeconds,
+    ignoredNicks: parseIgnoredNicks(data.ignoredNicks),
   };
 };
 

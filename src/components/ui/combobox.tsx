@@ -4,7 +4,7 @@ import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
 import { ChevronsUpDownIcon, XIcon } from "lucide-react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
+import { Input, type InputSize } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { ComboboxContext } from "@/components/ui/combobox-context";
@@ -25,10 +25,10 @@ export function ComboboxChipsInput({
   size,
   ...props
 }: Omit<ComboboxPrimitive.Input.Props, "size"> & {
-  size?: "sm" | "default" | "lg" | number;
+  size?: InputSize;
   ref?: React.Ref<HTMLInputElement>;
 }): React.ReactElement {
-  const sizeValue = (size ?? "default") as "sm" | "default" | "lg" | number;
+  const sizeValue = (size ?? "default") as InputSize;
 
   return (
     <ComboboxPrimitive.Input
@@ -58,12 +58,12 @@ export function ComboboxInput({
   showTrigger?: boolean;
   showClear?: boolean;
   startAddon?: React.ReactNode;
-  size?: "sm" | "default" | "lg" | number;
+  size?: InputSize;
   ref?: React.Ref<HTMLInputElement>;
   triggerProps?: ComboboxPrimitive.Trigger.Props;
   clearProps?: ComboboxPrimitive.Clear.Props;
 }): React.ReactElement {
-  const sizeValue = (size ?? "default") as "sm" | "default" | "lg" | number;
+  const sizeValue = (size ?? "default") as InputSize;
 
   return (
     <ComboboxPrimitive.InputGroup
