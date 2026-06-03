@@ -13,7 +13,10 @@ export const DEFAULT_SETTINGS: GiveawaySettings = {
   confirmTimeSeconds: 60,
   animationMode: "wheel",
   animationDurationSeconds: 8,
+  ignoredNicks: [],
 };
+
+export const MAX_IGNORED_NICKS = 50;
 
 export const ROLL_ANIMATION_MS = 2200;
 export const ROLL_ANIMATION_INTERVAL_MS = 80;

@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { useTheme } from "next-themes";
 import { GiveawayAppShell } from "@/components/giveaway/GiveawayAppShell";
@@ -74,6 +80,28 @@ function App() {
     [finalizeDraw],
   );
 
+  const usernameSuggestions = useMemo(() => {
+    const names = new Set<string>();
+
+    for (const message of giveaway.lastMessages) {
+      const trimmed = message.username.trim();
+      if (trimmed) {
+        names.add(trimmed);
+      }
+    }
+
+    for (const entrant of giveaway.entrants) {
+      const trimmed = entrant.username.trim();
+      if (trimmed) {
+        names.add(trimmed);
+      }
+    }
+
+    return [...names].sort((left, right) =>
+      left.localeCompare(right, undefined, { sensitivity: "base" }),
+    );
+  }, [giveaway.lastMessages, giveaway.entrants]);
+
   const settingsSidebarProps = {
     settings: giveaway.settings,
     giveawayStarted: giveaway.giveawayStarted,
@@ -84,6 +112,7 @@ function App() {
     onUpdateSettings: giveaway.updateSettings,
     onStartGiveaway: giveaway.handleStartGiveaway,
     onResetGiveaway: giveaway.handleReset,
+    usernameSuggestions,
   };
 
   if (!giveaway.isPersistenceReady) {
