@@ -1,6 +1,7 @@
 import type { Entrant, GiveawaySettings, WinnerRecord } from "@/giveaway/giveaway.types";
 import type { KickChatMessage } from "@/App.types";
 import { normalizeValue } from "@/services/drawUtils";
+import { isUsernameIgnored } from "@/giveaway/ignoredNicks.utils";
 import {
   buildEntrantFromMessage,
   checkMessageEligibility,
@@ -41,6 +42,10 @@ export const tryAddEntrant = (
   settings: GiveawaySettings,
   channelSubscribersOnly: boolean,
 ): Entrant[] => {
+  if (isUsernameIgnored(chatMessage.username, settings.ignoredNicks)) {
+    return entrants;
+  }
+
   if (!matchesKeyword(chatMessage.message, settings.keyword)) {
     return entrants;
   }

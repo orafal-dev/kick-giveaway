@@ -22,6 +22,8 @@ export interface GiveawaySettings {
   animationMode: AnimationMode;
   /** Total draw animation time (wheel spin + hold, or name roll). */
   animationDurationSeconds: number;
+  /** Usernames excluded from entering the giveaway (case-insensitive). */
+  ignoredNicks: string[];
 }
 
 export interface Entrant {
