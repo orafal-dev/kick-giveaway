@@ -1,5 +1,12 @@
+import { ChevronDownIcon } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { GiveawayActionButtons } from "@/components/giveaway/GiveawayActionButtons";
+import { IgnoredNicksField } from "@/components/giveaway/IgnoredNicksField";
+import {
+  Collapsible,
+  CollapsiblePanel,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -41,6 +48,7 @@ export interface SettingsPanelProps {
   onStartGiveaway: () => void;
   onResetGiveaway: () => void;
   showStartButton?: boolean;
+  usernameSuggestions?: string[];
 }
 
 const parseNumberInput = (value: string, fallback: number): number => {
@@ -58,6 +66,7 @@ export const SettingsForm = ({
   onResetGiveaway,
   hasStoredParticipantsOrWinners,
   showStartButton = true,
+  usernameSuggestions = [],
 }: SettingsPanelProps) => {
   const handleAnimationChange = (value: string | null): void => {
     if (!value) {
@@ -100,6 +109,14 @@ export const SettingsForm = ({
             />
           </div>
 
+          <IgnoredNicksField
+            ignoredNicks={settings.ignoredNicks}
+            suggestedUsernames={usernameSuggestions}
+            onIgnoredNicksChange={(ignoredNicks) =>
+              onUpdateSettings({ ignoredNicks })
+            }
+          />
+
           <div className="space-y-2">
             <Label htmlFor="winners-count-input">Winners</Label>
             <SidebarInput
@@ -126,88 +143,100 @@ export const SettingsForm = ({
       </SidebarGroup>
 
       <SidebarGroup>
-        <SidebarGroupContent className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="sub-duration-input">
-              Subscription Duration (months)
-            </Label>
-            <SidebarInput
-              id="sub-duration-input"
-              type="number"
-              min={0}
-              value={settings.subscriptionDurationMonths}
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                onUpdateSettings({
-                  subscriptionDurationMonths: Math.max(
-                    0,
-                    parseNumberInput(event.target.value, 0),
-                  ),
-                })
-              }
-              aria-label="Minimum subscription duration in months"
-            />
-          </div>
+        <SidebarGroupContent>
+          <Collapsible>
+            <CollapsibleTrigger className="inline-flex w-full items-center gap-2 font-medium text-sm data-panel-open:[&_svg]:rotate-180">
+              Eligibility rules
+              <ChevronDownIcon className="size-4" />
+            </CollapsibleTrigger>
+            <CollapsiblePanel>
+              <div className="flex flex-col gap-3 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="sub-duration-input">
+                    Subscription Duration (months)
+                  </Label>
+                  <SidebarInput
+                    id="sub-duration-input"
+                    type="number"
+                    min={0}
+                    value={settings.subscriptionDurationMonths}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                      onUpdateSettings({
+                        subscriptionDurationMonths: Math.max(
+                          0,
+                          parseNumberInput(event.target.value, 0),
+                        ),
+                      })
+                    }
+                    aria-label="Minimum subscription duration in months"
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sub-multiplier-input">Subscriber Multiplier</Label>
-            <SidebarInput
-              id="sub-multiplier-input"
-              type="number"
-              min={MIN_MULTIPLIER}
-              max={MAX_MULTIPLIER}
-              value={settings.subscriberMultiplier}
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                onUpdateSettings({
-                  subscriberMultiplier: Math.min(
-                    MAX_MULTIPLIER,
-                    Math.max(
-                      MIN_MULTIPLIER,
-                      parseNumberInput(event.target.value, 1),
-                    ),
-                  ),
-                })
-              }
-              aria-label="Subscriber entry multiplier"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sub-multiplier-input">
+                    Subscriber Multiplier
+                  </Label>
+                  <SidebarInput
+                    id="sub-multiplier-input"
+                    type="number"
+                    min={MIN_MULTIPLIER}
+                    max={MAX_MULTIPLIER}
+                    value={settings.subscriberMultiplier}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                      onUpdateSettings({
+                        subscriberMultiplier: Math.min(
+                          MAX_MULTIPLIER,
+                          Math.max(
+                            MIN_MULTIPLIER,
+                            parseNumberInput(event.target.value, 1),
+                          ),
+                        ),
+                      })
+                    }
+                    aria-label="Subscriber entry multiplier"
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="follow-duration-input">
-              Follow Duration (days)
-            </Label>
-            <SidebarInput
-              id="follow-duration-input"
-              type="number"
-              min={0}
-              value={settings.followDurationDays}
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                onUpdateSettings({
-                  followDurationDays: Math.max(
-                    0,
-                    parseNumberInput(event.target.value, 0),
-                  ),
-                })
-              }
-              aria-label="Minimum follow duration in days"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="follow-duration-input">
+                    Follow Duration (days)
+                  </Label>
+                  <SidebarInput
+                    id="follow-duration-input"
+                    type="number"
+                    min={0}
+                    value={settings.followDurationDays}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                      onUpdateSettings({
+                        followDurationDays: Math.max(
+                          0,
+                          parseNumberInput(event.target.value, 0),
+                        ),
+                      })
+                    }
+                    aria-label="Minimum follow duration in days"
+                  />
+                </div>
 
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-sidebar-border p-3">
-            <Label
-              htmlFor="subscribers-only-switch"
-              className="cursor-pointer text-sm"
-            >
-              Subscribers only
-            </Label>
-            <Switch
-              id="subscribers-only-switch"
-              checked={settings.subscribersOnly}
-              onCheckedChange={(checked) =>
-                onUpdateSettings({ subscribersOnly: checked === true })
-              }
-              aria-label="Allow subscribers only"
-            />
-          </div>
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-sidebar-border p-3">
+                  <Label
+                    htmlFor="subscribers-only-switch"
+                    className="cursor-pointer text-sm"
+                  >
+                    Subscribers only
+                  </Label>
+                  <Switch
+                    id="subscribers-only-switch"
+                    checked={settings.subscribersOnly}
+                    onCheckedChange={(checked) =>
+                      onUpdateSettings({ subscribersOnly: checked === true })
+                    }
+                    aria-label="Allow subscribers only"
+                  />
+                </div>
+              </div>
+            </CollapsiblePanel>
+          </Collapsible>
         </SidebarGroupContent>
       </SidebarGroup>
 
