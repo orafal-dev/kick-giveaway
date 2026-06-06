@@ -22,6 +22,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { VersionDisplay } from "@/components/VersionDisplay";
 import { useKickGiveaway } from "@/hooks/useKickGiveaway";
 
 const isEditableElement = (target: EventTarget | null): boolean => {
@@ -225,6 +226,7 @@ function App() {
 
           <footer className="space-y-1 text-center text-xs text-muted-foreground">
             <p>This app is not affiliated with Kick.com in any way.</p>
+            <VersionDisplay />
           </footer>
         </div>
       </SidebarInset>
