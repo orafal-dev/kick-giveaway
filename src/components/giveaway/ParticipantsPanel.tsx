@@ -114,8 +114,12 @@ export const ParticipantsPanel = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col overflow-hidden rounded-md border border-border">
-          <ScrollArea className="max-h-[max(calc(100vh-300px),400px)] p-2">
+        <div className="flex h-[max(calc(100vh-300px),400px)] flex-col overflow-hidden rounded-md border border-border">
+          <ScrollArea
+            className="min-h-0 flex-1 p-2"
+            scrollbarGutter
+            scrollFade
+          >
             <ul className="space-y-2 text-left text-sm">
               {entrants.map((entrant) => (
                 <li
