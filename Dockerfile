@@ -2,6 +2,10 @@
 FROM oven/bun:1-alpine AS build
 WORKDIR /app
 
+# Coolify injects SOURCE_COMMIT when "Include Source Commit in Build" is enabled
+ARG SOURCE_COMMIT
+ENV SOURCE_COMMIT=${SOURCE_COMMIT}
+
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
@@ -12,6 +16,8 @@ RUN bun run build
 FROM oven/bun:1-alpine AS runner
 WORKDIR /app
 
+ARG SOURCE_COMMIT
+ENV SOURCE_COMMIT=${SOURCE_COMMIT}
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
