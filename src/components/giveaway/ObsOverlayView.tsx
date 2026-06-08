@@ -151,7 +151,6 @@ export const ObsOverlayView = ({
     state?.winnerConfirmationEnabled &&
     state?.isCountdownActive &&
     !isDrawing;
-  const showConfetti = state?.showConfetti === true;
   const isNoShow = state?.latestWinnerNoShow === true;
 
   const resultResetKey = useMemo(
@@ -177,6 +176,10 @@ export const ObsOverlayView = ({
     layout.resultDismissSeconds,
     resultResetKey,
   );
+
+  const showConfetti =
+    state?.showConfetti === true ||
+    (showWinnerResult && !winnerDismiss.dismissed && !isNoShow);
 
   const hasVisibleContent =
     isDrawing ||

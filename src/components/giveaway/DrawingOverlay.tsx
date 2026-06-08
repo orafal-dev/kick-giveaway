@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DrawAnimation } from "@/components/giveaway/DrawAnimation";
 import { WheelPickerDrawAnimation } from "@/components/giveaway/WheelPickerDrawAnimation";
 import type { AnimationMode, Entrant } from "@/giveaway/giveaway.types";
@@ -16,6 +16,13 @@ interface DrawingOverlayProps {
   onComplete: (winner: Entrant) => void;
 }
 
+interface DrawSnapshot {
+  animationDurationSeconds: number;
+  entrants: Entrant[];
+  mode: AnimationMode;
+  winner: Entrant;
+}
+
 export const DrawingOverlay = ({
   isVisible,
   mode,
@@ -27,6 +34,31 @@ export const DrawingOverlay = ({
   onComplete,
 }: DrawingOverlayProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [localDisplayName, setLocalDisplayName] = useState("");
+
+  const drawSnapshot = useMemo<DrawSnapshot>(
+    () => ({
+      animationDurationSeconds,
+      entrants: [...entrants],
+      mode,
+      winner,
+    }),
+    // Frozen for this draw; parent remounts via drawTarget key.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const handleDisplayChange = useCallback((username: string): void => {
+    setLocalDisplayName(username);
+  }, []);
+
+  const handleComplete = useCallback(
+    (drawnWinner: Entrant): void => {
+      onDisplayChange(drawnWinner.username);
+      onComplete(drawnWinner);
+    },
+    [onComplete, onDisplayChange],
+  );
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -56,7 +88,8 @@ export const DrawingOverlay = ({
     return null;
   }
 
-  const isWheelMode = mode === "wheel";
+  const isWheelMode = drawSnapshot.mode === "wheel";
+  const activeDisplayName = localDisplayName || displayName;
 
   return (
     <dialog
@@ -66,12 +99,12 @@ export const DrawingOverlay = ({
     >
       {isWheelMode ? (
         <WheelPickerDrawAnimation
-          animationDurationSeconds={animationDurationSeconds}
-          entrants={entrants}
-          winner={winner}
+          animationDurationSeconds={drawSnapshot.animationDurationSeconds}
+          entrants={drawSnapshot.entrants}
+          winner={drawSnapshot.winner}
           isActive={isVisible}
-          onDisplayChange={onDisplayChange}
-          onComplete={onComplete}
+          onDisplayChange={handleDisplayChange}
+          onComplete={handleComplete}
         />
       ) : (
         <div className="mx-4 w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-2xl">
@@ -81,21 +114,21 @@ export const DrawingOverlay = ({
 
           <p
             className={`mb-2 font-semibold text-primary ${
-              mode === "classic" ? "text-5xl" : "text-4xl animate-pulse"
+              drawSnapshot.mode === "classic" ? "text-5xl" : "text-4xl animate-pulse"
             }`}
             aria-live="polite"
           >
-            {displayName || "..."}
+            {activeDisplayName || "..."}
           </p>
 
           <DrawAnimation
-            mode={mode}
-            animationDurationSeconds={animationDurationSeconds}
-            entrants={entrants}
-            winner={winner}
+            mode={drawSnapshot.mode}
+            animationDurationSeconds={drawSnapshot.animationDurationSeconds}
+            entrants={drawSnapshot.entrants}
+            winner={drawSnapshot.winner}
             isActive={isVisible}
-            onDisplayChange={onDisplayChange}
-            onComplete={onComplete}
+            onDisplayChange={handleDisplayChange}
+            onComplete={handleComplete}
           />
         </div>
       )}

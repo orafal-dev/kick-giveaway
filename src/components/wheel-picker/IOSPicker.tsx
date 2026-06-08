@@ -1,5 +1,5 @@
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { IOSPickerProps, WheelRowProps } from "@/components/wheel-picker/iosPicker.types";
 import { wheelSpinEaseOut } from "@/components/wheel-picker/wheelSpinEasing";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -28,6 +28,9 @@ export const IOSPicker = <T,>({
   const position = useMotionValue(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollRound, setScrollRound] = useState(0);
+  const onSettledRef = useRef(onSettled);
+
+  onSettledRef.current = onSettled;
 
   const virtualIndexes = useMemo(() => {
     const current = scrollRound;
@@ -75,10 +78,12 @@ export const IOSPicker = <T,>({
     }
 
     const target = current + loops * total + delta;
+    const settledItem = items[winnerIndex]!;
+    const settledIndex = winnerIndex;
 
     if (shouldReduceMotion) {
       position.set(target);
-      onSettled?.(items[winnerIndex]!, winnerIndex);
+      onSettledRef.current?.(settledItem, settledIndex);
       return;
     }
 
@@ -89,7 +94,7 @@ export const IOSPicker = <T,>({
     });
 
     void controls.finished.then(() => {
-      onSettled?.(items[winnerIndex]!, winnerIndex);
+      onSettledRef.current?.(settledItem, settledIndex);
     });
 
     return () => controls.stop();
@@ -97,7 +102,6 @@ export const IOSPicker = <T,>({
     duration,
     items,
     loops,
-    onSettled,
     position,
     shouldReduceMotion,
     spinning,
