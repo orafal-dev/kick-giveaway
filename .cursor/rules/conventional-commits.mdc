@@ -1,0 +1,53 @@
+---
+description: Conventional commit message format for this repository
+alwaysApply: true
+---
+
+# Conventional Commits
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) for every commit message.
+
+## Format
+
+```
+<type>(<optional scope>): <subject>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+- **subject**: imperative mood, lowercase, no trailing period, max 72 characters
+- **scope**: optional area of change (e.g. `giveaway`, `overlay`, `auth`, `collector`, `deps`)
+- **body**: explain *why*, not *what*, when the change is non-obvious
+
+## Types
+
+| Type | Use for |
+| --- | --- |
+| `feat` | New user-facing behavior |
+| `fix` | Bug fixes |
+| `docs` | README, DEPLOY, comments only |
+| `style` | Formatting, whitespace (no logic change) |
+| `refactor` | Code change that is neither feat nor fix |
+| `perf` | Performance improvements |
+| `test` | Tests only |
+| `build` | Build system, Docker, dependencies |
+| `ci` | CI/CD configuration |
+| `chore` | Maintenance that does not fit above |
+
+Breaking changes: add `!` after type/scope (`feat(api)!: …`) or a `BREAKING CHANGE:` footer.
+
+## Examples
+
+```
+feat(giveaway): add confirmation countdown after draw
+fix(overlay): sync confetti timing with wheel completion
+docs: document Coolify deploy steps
+build(deps): sync bun.lock after auth upgrade
+chore: setup commitlint and husky hooks
+```
+
+## Validation
+
+Commit messages are checked by commitlint via the Husky `commit-msg` hook. Invalid messages are rejected before the commit is created.

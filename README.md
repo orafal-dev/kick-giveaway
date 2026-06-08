@@ -18,6 +18,43 @@ cp .env.example .env.local
 npm run dev:stack
 ```
 
+### Commit messages
+
+This repo uses [Conventional Commits](https://www.conventionalcommits.org/). Messages are validated on every commit via [commitlint](https://commitlint.js.org/) and [Husky](https://typicode.github.io/husky/).
+
+```
+<type>(<optional scope>): <subject>
+```
+
+| Type | Use for |
+| --- | --- |
+| `feat` | New user-facing behavior |
+| `fix` | Bug fixes |
+| `docs` | Documentation only |
+| `style` | Formatting, no logic change |
+| `refactor` | Code change that is neither feat nor fix |
+| `perf` | Performance improvements |
+| `test` | Tests only |
+| `build` | Build system, Docker, dependencies |
+| `ci` | CI/CD configuration |
+| `chore` | Other maintenance |
+
+Examples:
+
+```
+feat(giveaway): add confirmation countdown after draw
+fix(overlay): sync confetti timing with wheel completion
+docs: document Coolify deploy steps
+```
+
+Breaking changes: `feat(api)!: remove legacy session endpoint` or a `BREAKING CHANGE:` footer.
+
+Check a message locally:
+
+```bash
+echo "feat: add wheel animation" | bunx commitlint
+```
+
 `dev:stack` starts Redis in Docker and runs the embedded chat collector inside Next.js.
 
 Open [http://localhost:3000](http://localhost:3000).
