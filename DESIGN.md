@@ -1,216 +1,244 @@
 ---
-version: alpha
-name: Kick Neon Dark
-description: A high-contrast dark streaming interface with a loud neon accent and compact, content-dense navigation.
+name: kickaway.win Control Deck
+description: Dark-first streamer control panel with electric Kick green reserved for live moments, draws, and primary CTAs.
 colors:
-  primary: "#53FC18"
-  secondary: "#171A1C"
-  tertiary: "#2A2D31"
-  neutral: "#0B0B0C"
-  surface: "#171A1C"
-  on-surface: "#FFFFFF"
-  error: "#FF4D4F"
-  border: "#2B2F33"
-  muted: "#9AA0A6"
+  kick-signal: "#53FC18"
+  kick-ink: "#0B0B0C"
+  canvas-dark: "#0F0F10"
+  surface-dark: "#171717"
+  surface-raised: "#1C1C1E"
+  ink-primary: "#F5F5F5"
+  ink-muted: "#9AA0A6"
+  border-subtle: "#2B2F33"
+  destructive: "#EF4444"
+  sidebar-dark: "#404040"
 typography:
-  headline-display:
-    fontFamily: Inter
-    fontSize: 32px
+  display:
+    fontFamily: "Geist Variable, system-ui, sans-serif"
+    fontSize: "clamp(1.875rem, 4vw, 2.25rem)"
     fontWeight: 700
-    lineHeight: 38px
-    letterSpacing: 0px
-  headline-lg:
-    fontFamily: Inter
-    fontSize: 26px
-    fontWeight: 700
-    lineHeight: 31px
-    letterSpacing: 0px
-  headline-md:
-    fontFamily: Inter
-    fontSize: 21px
+    lineHeight: 1.1
+    letterSpacing: "-0.025em"
+  headline:
+    fontFamily: "Geist Variable, system-ui, sans-serif"
+    fontSize: "1.125rem"
     fontWeight: 600
-    lineHeight: 25px
-    letterSpacing: 0px
-  headline-sm:
-    fontFamily: Inter
-    fontSize: 17px
-    fontWeight: 600
-    lineHeight: 20px
-    letterSpacing: 0px
+    lineHeight: 1.2
+    letterSpacing: "normal"
+  body:
+    fontFamily: "Geist Variable, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 400
+    lineHeight: 1.43
+    letterSpacing: "normal"
   body-lg:
-    fontFamily: Inter
-    fontSize: 16px
+    fontFamily: "Geist Variable, system-ui, sans-serif"
+    fontSize: "1rem"
     fontWeight: 400
-    lineHeight: 24px
-    letterSpacing: 0px
-  body-md:
-    fontFamily: Inter
-    fontSize: 14px
-    fontWeight: 400
-    lineHeight: 20px
-    letterSpacing: 0px
-  body-sm:
-    fontFamily: Inter
-    fontSize: 12px
-    fontWeight: 400
-    lineHeight: 16px
-    letterSpacing: 0px
-  label-lg:
-    fontFamily: Inter
-    fontSize: 14px
-    fontWeight: 600
-    lineHeight: 20px
-    letterSpacing: 0px
-  label-md:
-    fontFamily: Inter
-    fontSize: 13px
-    fontWeight: 600
-    lineHeight: 18px
-    letterSpacing: 0px
-  label-sm:
-    fontFamily: Inter
-    fontSize: 12px
-    fontWeight: 600
-    lineHeight: 16px
-    letterSpacing: 0px
-  overline:
-    fontFamily: Inter
-    fontSize: 11px
-    fontWeight: 700
-    lineHeight: 12px
-    letterSpacing: 0.06em
-  caption:
-    fontFamily: Inter
-    fontSize: 12px
-    fontWeight: 400
-    lineHeight: 16px
-    letterSpacing: 0px
+    lineHeight: 1.5
+    letterSpacing: "normal"
+  label:
+    fontFamily: "Geist Variable, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 500
+    lineHeight: 1.25
+    letterSpacing: "normal"
 rounded:
-  none: 0px
-  sm: 4px
-  md: 6px
-  lg: 8px
-  xl: 12px
-  full: 9999px
+  sm: "6px"
+  md: "8px"
+  lg: "10px"
+  xl: "14px"
+  card: "16px"
+  full: "9999px"
 spacing:
-  xs: 4px
-  sm: 8px
-  md: 12px
-  lg: 16px
-  xl: 20px
-  gutter: 24px
-  section: 32px
+  xs: "4px"
+  sm: "8px"
+  md: "12px"
+  lg: "16px"
+  xl: "24px"
+  panel: "24px"
 components:
-  button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.neutral}"
-    typography: "{typography.label-md}"
-    rounded: "{rounded.sm}"
-    padding: "6px 12px"
-    height: "40px"
-  button-primary-hover:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.neutral}"
-    typography: "{typography.label-md}"
-    rounded: "{rounded.sm}"
-    padding: "6px 12px"
-    height: "40px"
-  button-secondary:
-    backgroundColor: "transparent"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.label-md}"
-    rounded: "{rounded.sm}"
-    padding: "6px 12px"
-    height: "40px"
-  button-tertiary:
-    backgroundColor: "transparent"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.none}"
-    padding: "0px"
-  card:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    rounded: "{rounded.md}"
-    padding: "16px"
-  input:
-    backgroundColor: "{colors.neutral}"
-    textColor: "{colors.on-surface}"
-    rounded: "{rounded.sm}"
+  button-kick:
+    backgroundColor: "{colors.kick-signal}"
+    textColor: "{colors.kick-ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "0 16px"
+    height: "48px"
+  button-kick-hover:
+    backgroundColor: "{colors.kick-signal}"
+    textColor: "{colors.kick-ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "0 16px"
+    height: "48px"
+  button-outline:
+    backgroundColor: "{colors.surface-raised}"
+    textColor: "{colors.ink-primary}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "0 12px"
+    height: "32px"
+  input-default:
+    backgroundColor: "{colors.canvas-dark}"
+    textColor: "{colors.ink-primary}"
+    rounded: "{rounded.lg}"
     padding: "8px 12px"
-    height: "40px"
-  chip:
-    backgroundColor: "{colors.tertiary}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.full}"
-    padding: "4px 8px"
+    height: "48px"
+  card-default:
+    backgroundColor: "{colors.surface-dark}"
+    textColor: "{colors.ink-primary}"
+    rounded: "{rounded.card}"
+    padding: "24px"
   sidebar-item:
     backgroundColor: "transparent"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.label-lg}"
-    rounded: "{rounded.sm}"
-    padding: "10px 12px"
+    textColor: "{colors.ink-primary}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "8px"
+    height: "32px"
   badge-live:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.neutral}"
-    typography: "{typography.label-sm}"
+    backgroundColor: "{colors.kick-signal}"
+    textColor: "{colors.kick-ink}"
+    typography: "{typography.label}"
     rounded: "{rounded.sm}"
     padding: "2px 6px"
 ---
 
-# Kick Neon Dark
+# Design System: kickaway.win Control Deck
 
 ## Overview
-Kick’s interface feels energetic, direct, and built for nonstop browsing and live participation. The dark canvas keeps attention on streams and chat, while the neon green accent injects urgency and brand recognition. Overall the experience is dense and utility-first, aimed at stream viewers who want fast discovery, strong hierarchy, and minimal visual friction.
+
+**Creative North Star: "The Control Deck"**
+
+kickaway.win is a streamer's broadcast control panel first and a marketing page second. The UI reads like pro production software: dark canvas, compact controls, sidebar navigation, dense participant lists. Showtime energy arrives at the climax (draw overlay, confetti, wheel spin) while day-to-day operation stays scannable under live pressure.
+
+The system builds on shadcn/ui + Tailwind v4 tokens in `globals.css`, with a dedicated `kick` color role and `button-kick` variant for channel connect and draw actions. Light mode exists but dark is the native streamer context (second monitor, dim room).
+
+**Key Characteristics:**
+
+- Dark-first tonal layering, not decorative shadows
+- Geist Variable for sharp, modern legibility at small sizes
+- Kick green (#53FC18) as electric signal, not wallpaper
+- Compact shadcn components (h-8/h-9 controls, rounded-lg/2xl cards)
+- Playful motion isolated to draw moments; utilitarian elsewhere
+- Sidebar + inset layout for multi-panel giveaway workflow
 
 ## Colors
-- **Primary (#53FC18):** A vivid neon green used for the most important actions, live indicators, and brand moments. It should feel electric and attention-grabbing, not decorative.
-- **Secondary (#171A1C):** The main elevated surface color for panels, sidebars, cards, and overlays. It keeps the interface cohesive while separating content from the near-black background.
-- **Tertiary (#2A2D31):** A muted slate used for chips, subtle controls, and low-emphasis containers. It supports hierarchy without competing with the primary accent.
-- **Neutral (#0B0B0C):** The page background and deepest layer in the system. This near-black tone creates a theater-like frame around video and chat.
-- **On-surface (#FFFFFF):** The default text and icon color on dark surfaces. White is used aggressively to preserve readability and visual contrast.
-- **Border (#2B2F33):** A quiet divider color for input outlines, panels, and low-contrast boundaries. It prevents hard separations from feeling too heavy.
-- **Muted (#9AA0A6):** A secondary text tone for metadata, labels, and supporting information. Use it for less important copy like counts and subtitles.
-- **Error (#FF4D4F):** A cautionary accent for destructive states or status messaging when needed. It should remain rare in a system dominated by green and white.
+
+A near-black canvas with stepped neutral surfaces and one loud accent.
+
+### Primary
+
+- **Electric Signal** (#53FC18): Kick brand green for connect CTAs, draw triggers, live badges, and winner moments. Reads as "go live" energy. Never used as a page background or large fill.
+
+### Neutral
+
+- **Broadcast Canvas** (#0F0F10): Default dark background (`--background` in dark mode). Theater frame for lists and panels.
+- **Panel Surface** (#171717): Cards, popovers, elevated panels (`--card`).
+- **Raised Surface** (#1C1C1E): Inputs, subtle elevation steps (`--input`, accent tints).
+- **Primary Ink** (#F5F5F5): Headings, labels, active nav (`--foreground`).
+- **Metadata Ink** (#9AA0A6): Counts, descriptions, helper text (`--muted-foreground`). Darkened mix for WCAG on dark bg.
+- **Quiet Border** (#2B2F33): Panel edges, input outlines (`--border`, ~6% white alpha in code).
+- **Kick Ink** (#0B0B0C): Text on green buttons (`--kick-foreground`).
+
+### Tertiary
+
+- **Sidebar Rail** (#404040): Collapsible nav column (`--sidebar` in dark). Slightly lifted from canvas.
+
+### Semantic
+
+- **Destructive** (#EF4444): Reset, remove, error states (`--destructive`).
+
+### Named Rules
+
+**The Electric Signal Rule.** Kick green appears on ≤10% of any screen outside draw overlays. If green is everywhere, it stops meaning "live."
+
+**The Muted Ink Rule.** Metadata text uses `--muted-foreground` with a darkened color-mix, never raw neutral-500 on near-black. Gray-on-dark that fails contrast is the fastest way to look AI-generated.
 
 ## Typography
-Inter is the system typeface across all UI, matching the product’s sharp, modern, highly legible feel. Headlines use bold to semi-bold weights to anchor dense content blocks, while body text stays regular for readability in chat, lists, and metadata. Labels and controls lean heavier than body copy so buttons, pills, and navigation remain easy to scan in a crowded layout.
 
-The typography scale should stay compact: `headline-display` and `headline-lg` for major section headers, `headline-md` and `headline-sm` for cards and panels, and `body-md` / `body-sm` for supporting text. `label-md` and `label-lg` are the best fit for buttons, sidebar items, and category tags. Uppercase is not a dominant pattern, but `overline` may be used sparingly for micro-labels if tighter tracking is needed.
+**Display / Body / Label Font:** Geist Variable (`@fontsource-variable/geist`), mapped to `--font-sans`.
 
-## Layout
-The layout is dense and dashboard-like, with strong lateral structure: a left navigation rail, a central content stage, and a right chat column. Content blocks use fixed, card-based widths rather than a spacious editorial grid, which suits live video, chat, and browse-first discovery. Section spacing should follow a tight rhythm using 4px, 8px, 12px, 16px, and 20px increments, with larger section separation at 24px to 32px when switching between major areas.
+**Character:** Technical sans with tight tracking on headlines. Optimized for scanning lists and button rows at 14px, not editorial prose.
 
-Cards and panels should use 16px internal padding, while compact controls and chips stay closer to 6px to 12px padding. The overall composition favors high information density with minimal empty space, but still preserves clear gutters so media, lists, and chat do not collapse into one another.
+### Hierarchy
 
-## Elevation & Depth
-Depth is subtle and mostly achieved through tonal layering rather than dramatic shadows. The UI relies on a very dark background, slightly lighter surfaces, and crisp borders to separate zones. Video containers and cards may use soft shadowing, but the system generally prefers flat, practical layering that keeps the interface fast and unembellished.
+- **Display** (700, clamp 1.875–2.25rem, line-height 1.1): Landing page title (`ChannelLanding` h1). One per view.
+- **Headline** (600, 1.125rem): Card titles, panel headers (`CardTitle`, sidebar sections).
+- **Body** (400, 0.875rem / 1rem): Descriptions, form help, list metadata. Cap prose at ~65ch where long copy appears.
+- **Label** (500, 0.875rem): Buttons, inputs, sidebar items. Heavier than body for scan speed.
+- **Overline** (500, 0.875rem, uppercase, tracking-wide): Landing kicker only; not repeated per section.
 
-Use contrast and surface stepping to create hierarchy: background, surface, then controls and active states. The neon primary color should do the heavy lifting for emphasis instead of shadow-heavy treatments.
+### Named Rules
 
-## Shapes
-The shape language is restrained and functional, with small radii that keep the interface feeling sharp and modern. Most interactive elements use `rounded.sm` at 4px, while cards and larger containers can move to 6px or 8px for a slightly softer block presence. Pills and status chips should use full rounding to contrast with the otherwise squared-off layout.
+**The One Family Rule.** Geist carries display through label. No secondary display face; hierarchy is weight and size, not font pairing.
 
-Overall the system should feel architectural rather than playful: clipped corners, compact buttons, and minimal curvature.
+## Elevation
+
+Tonal layering is the default. Depth comes from background → card → popover steps, 1px inset highlights (`before:shadow`), and border-alpha dividers. Cards use `shadow-xs/5` at most; popovers and toasts add slightly stronger shadow-lg/5. No floating glass panels, no dramatic drop shadows.
+
+### Shadow Vocabulary
+
+- **Hairline inset** (`0 1px black/4%` light, `0 -1px white/6%` dark): Resting buttons, inputs, cards. Structural, not decorative.
+- **Popover lift** (`shadow-lg/5`): Dropdowns, combobox, toast stack. State response, not default chrome.
+
+### Named Rules
+
+**The Flat-By-Default Rule.** Surfaces are flat at rest. Stronger shadow appears only on floating layers (popover, toast, sheet).
 
 ## Components
-Buttons are small, dense, and high-contrast. `button-primary` uses the neon green fill with dark text and a 40px height, making it the clear call to action for actions like Sign Up or Watch now. `button-secondary` is transparent with a white outline or text treatment for less dominant actions, and `button-tertiary` should remain text-only for lightweight links. Keep button padding compact at 6px 12px, and avoid oversized button chrome.
 
-Inputs should be dark, bordered, and low-noise. The search field uses a dark surface with a subtle outline, 40px height, and compact horizontal padding so it blends into the top bar without stealing attention. Focus states can rely on brighter border contrast or primary-color emphasis, but should not introduce glow-heavy styling.
+### Buttons
 
-Cards use `card` as a dark surface container with 16px padding and modest 6px rounding. They should frame media and metadata cleanly, with image-first layouts and high-contrast text overlays when needed. Cards must stay visually subordinate to the video and the primary action button.
+- **Shape:** `rounded-lg` (10px base radius), compact heights h-7 through h-12 by size prop.
+- **Kick primary:** `variant="kick"` — bg-kick, text-kick-foreground, hover/pressed at 90%/80% opacity. Used for Connect, Start draw, key giveaway actions.
+- **Default / outline / ghost:** shadcn neutral variants for secondary actions. Outline uses border-input + bg-popover; ghost for toolbar icon buttons.
+- **Focus:** `ring-2 ring-ring ring-offset-1`. No glow halos.
 
-Chips and badges are important in this system because they communicate live status, language, and category quickly. `chip` should be pill-shaped, compact, and muted by default, while `badge-live` can adopt the primary green to signal urgency and presence. Sidebar items should feel like navigational rows rather than buttons, with a clear active state and enough padding for quick scanning.
+### Inputs
 
-Lists, chat rows, and category tiles should remain compact and rhythmical. Use icon-plus-label patterns, small avatar treatment, and tight vertical spacing so browse and chat can coexist without visual clutter.
+- **Style:** `rounded-lg`, border-input, bg-background (dark: bg-input/32), h-9 default / h-12 for `size="2xl"` landing input.
+- **Focus:** border-ring + ring-[3px] ring-ring/24. Invalid states use destructive border/ring tints.
+
+### Cards
+
+- **Corner Style:** `rounded-2xl` (16px) with inset hairline shadow.
+- **Background:** bg-card on canvas; 24px header/content padding (`p-6`).
+- **Border:** 1px border default. No nested card stacks.
+
+### Navigation (Sidebar)
+
+- **Width:** 16rem expanded, 3rem icon-collapsed.
+- **Items:** rounded-lg, h-8 rows, active state via bg-sidebar-accent + font-medium.
+- **Mobile:** Sheet drawer at 18rem.
+
+### Draw Overlay (signature)
+
+- **Role:** Full-screen `<dialog>` for wheel/slot animation during winner selection.
+- **Treatment:** Motion-heavy (motion library), confetti on finalize. Must respect `prefers-reduced-motion` (globals.css zeroes durations).
+- **Separation:** Only surface where choreographed animation is expected.
+
+### Chips / Badges
+
+- Live/status badges use kick-signal fill. Filter chips use bg-accent rounded-md, compact padding.
 
 ## Do's and Don'ts
-- Do keep the interface dark-first and let the neon green accent carry the brand energy.
-- Do use Inter in bold, compact treatments for headings, navigation, and actions.
-- Do preserve a dense, dashboard-like layout with clear but tight spacing.
-- Do favor subtle surfaces and borders over dramatic shadows or glossy effects.
-- Don't introduce large border radii or soft, playful shapes that weaken the sharp feel.
-- Don't replace the primary green with multiple bright accent colors; keep the palette disciplined.
-- Don't use roomy, airy spacing or oversized cards that reduce the sense of live content density.
-- Don't make secondary actions compete with the primary CTA; they should remain quieter and more utilitarian.
+
+### Do:
+
+- **Do** keep the interface dark-first; streamers use this beside OBS in dim environments.
+- **Do** reserve #53FC18 for live status, primary CTAs, and draw climax moments.
+- **Do** use Geist at 14px for dense lists (participants, winners) with label-weight buttons.
+- **Do** use tonal surface steps and hairline borders before reaching for shadow.
+- **Do** isolate playful motion to draw overlay and confetti; keep settings panels static.
+
+### Don't:
+
+- **Don't** use generic SaaS landing patterns: cream backgrounds, purple gradients, hero metrics, identical icon-card grids.
+- **Don't** mimic Twitch-clone purple-heavy streaming tool aesthetics.
+- **Don't** use overdesigned UI: glassmorphism, gradient text, excessive decorative motion.
+- **Don't** put Kick green on large background fills or every button; it is signal, not theme paint.
+- **Don't** add uppercase eyebrow kickers above every section; one landing overline is enough.
+- **Don't** use side-stripe colored borders on list items or alerts.
+- **Don't** nest cards inside cards for participants/winners panels.

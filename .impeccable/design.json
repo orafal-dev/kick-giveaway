@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-08T00:00:00.000Z",
+  "title": "Design System: kickaway.win Control Deck",
+  "extensions": {
+    "colorMeta": {
+      "kick-signal": {
+        "role": "primary",
+        "displayName": "Electric Signal",
+        "canonical": "oklch(0.87 0.29 142)",
+        "tonalRamp": [
+          "oklch(0.25 0.12 142)",
+          "oklch(0.35 0.16 142)",
+          "oklch(0.45 0.20 142)",
+          "oklch(0.55 0.24 142)",
+          "oklch(0.65 0.26 142)",
+          "oklch(0.75 0.28 142)",
+          "oklch(0.82 0.29 142)",
+          "oklch(0.87 0.29 142)"
+        ]
+      },
+      "canvas-dark": {
+        "role": "neutral",
+        "displayName": "Broadcast Canvas",
+        "canonical": "oklch(0.14 0 0)",
+        "tonalRamp": [
+          "oklch(0.08 0 0)",
+          "oklch(0.10 0 0)",
+          "oklch(0.12 0 0)",
+          "oklch(0.14 0 0)",
+          "oklch(0.18 0 0)",
+          "oklch(0.22 0 0)",
+          "oklch(0.28 0 0)",
+          "oklch(0.35 0 0)"
+        ]
+      },
+      "ink-primary": {
+        "role": "neutral",
+        "displayName": "Primary Ink",
+        "canonical": "oklch(0.97 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.25 0 0)",
+          "oklch(0.35 0 0)",
+          "oklch(0.45 0 0)",
+          "oklch(0.55 0 0)",
+          "oklch(0.65 0 0)",
+          "oklch(0.80 0 0)",
+          "oklch(0.97 0 0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing page title only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Card and panel headers."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Descriptions, list metadata, helper copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, inputs, sidebar nav items."
+      }
+    },
+    "shadows": [
+      {
+        "name": "hairline-inset-light",
+        "value": "0 1px rgba(0,0,0,0.04)",
+        "purpose": "Resting control inset on light surfaces."
+      },
+      {
+        "name": "hairline-inset-dark",
+        "value": "0 -1px rgba(255,255,255,0.06)",
+        "purpose": "Resting control inset on dark surfaces."
+      },
+      {
+        "name": "popover-lift",
+        "value": "0 10px 15px -3px rgba(0,0,0,0.05)",
+        "purpose": "Floating popover, combobox, toast layers."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-quart",
+        "value": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Draw overlay and UI state transitions."
+      },
+      {
+        "name": "toast-bounce",
+        "value": "cubic-bezier(0.5, 1, 0.89, 1)",
+        "purpose": "Toast success/error micro-feedback."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "All animations collapse when prefers-reduced-motion is set."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Kick Connect Button",
+      "kind": "button",
+      "refersTo": "button-kick",
+      "description": "Primary CTA for channel connect and draw actions.",
+      "html": "<button class=\"ds-btn-kick\" type=\"button\">Connect</button>",
+      "css": ".ds-btn-kick { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 16px; border: none; border-radius: 10px; background: #53FC18; color: #0B0B0C; font-family: 'Geist Variable', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background 0.15s cubic-bezier(0.25, 1, 0.5, 1); } .ds-btn-kick:hover { background: rgba(83, 252, 24, 0.9); } .ds-btn-kick:focus-visible { outline: 2px solid #737373; outline-offset: 2px; } .ds-btn-kick:active { background: rgba(83, 252, 24, 0.8); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary actions in panels and toolbars.",
+      "html": "<button class=\"ds-btn-outline\" type=\"button\">Reset</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 12px; border: 1px solid #2B2F33; border-radius: 10px; background: #1C1C1E; color: #F5F5F5; font-family: 'Geist Variable', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; box-shadow: 0 1px rgba(0,0,0,0.04); transition: background 0.15s ease; } .ds-btn-outline:hover { background: rgba(255,255,255,0.06); } .ds-btn-outline:focus-visible { outline: 2px solid #737373; outline-offset: 2px; }"
+    },
+    {
+      "name": "Channel Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Kick channel slug field on landing and settings.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"channel name, e.g. xqc\" aria-label=\"Kick channel name\" />",
+      "css": ".ds-input { width: 100%; height: 48px; padding: 8px 12px; border: 1px solid #2B2F33; border-radius: 10px; background: #0F0F10; color: #F5F5F5; font-family: 'Geist Variable', system-ui, sans-serif; font-size: 1rem; box-shadow: 0 1px rgba(0,0,0,0.04); transition: border-color 0.15s, box-shadow 0.15s; } .ds-input::placeholder { color: #9AA0A6; } .ds-input:focus-visible { outline: none; border-color: #737373; box-shadow: 0 0 0 3px rgba(115,115,115,0.24); }"
+    },
+    {
+      "name": "Panel Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Landing connect card and settings sections.",
+      "html": "<div class=\"ds-card\"><h2 class=\"ds-card-title\">Connect your Kick channel</h2><p class=\"ds-card-desc\">Enter the channel slug to start a live chat giveaway</p></div>",
+      "css": ".ds-card { padding: 24px; border: 1px solid #2B2F33; border-radius: 16px; background: #171717; color: #F5F5F5; box-shadow: 0 1px rgba(0,0,0,0.04); } .ds-card-title { margin: 0 0 4px; font-family: 'Geist Variable', system-ui, sans-serif; font-size: 1.125rem; font-weight: 600; } .ds-card-desc { margin: 0; font-size: 0.875rem; color: #9AA0A6; }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "sidebar-item",
+      "description": "Giveaway sidebar navigation row.",
+      "html": "<button class=\"ds-sidebar-item\" type=\"button\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/></svg><span>Participants</span></button>",
+      "css": ".ds-sidebar-item { display: flex; align-items: center; gap: 8px; width: 100%; height: 32px; padding: 8px; border: none; border-radius: 10px; background: transparent; color: #F5F5F5; font-family: 'Geist Variable', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; text-align: left; } .ds-sidebar-item:hover { background: rgba(255,255,255,0.08); } .ds-sidebar-item:focus-visible { outline: 2px solid #737373; outline-offset: 2px; }"
+    },
+    {
+      "name": "Live Badge",
+      "kind": "chip",
+      "refersTo": "badge-live",
+      "description": "Live/collecting status indicator.",
+      "html": "<span class=\"ds-badge-live\">LIVE</span>",
+      "css": ".ds-badge-live { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 6px; background: #53FC18; color: #0B0B0C; font-family: 'Geist Variable', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Control Deck",
+    "overview": "kickaway.win is a streamer's broadcast control panel first and a marketing page second. The UI reads like pro production software: dark canvas, compact controls, sidebar navigation, dense participant lists. Showtime energy arrives at the climax (draw overlay, confetti, wheel spin) while day-to-day operation stays scannable under live pressure.",
+    "keyCharacteristics": [
+      "Dark-first tonal layering, not decorative shadows",
+      "Geist Variable for sharp, modern legibility at small sizes",
+      "Kick green (#53FC18) as electric signal, not wallpaper",
+      "Compact shadcn components (h-8/h-9 controls, rounded-lg/2xl cards)",
+      "Playful motion isolated to draw moments; utilitarian elsewhere",
+      "Sidebar + inset layout for multi-panel giveaway workflow"
+    ],
+    "rules": [
+      {
+        "name": "The Electric Signal Rule",
+        "body": "Kick green appears on ≤10% of any screen outside draw overlays. If green is everywhere, it stops meaning live.",
+        "section": "colors"
+      },
+      {
+        "name": "The Muted Ink Rule",
+        "body": "Metadata text uses muted-foreground with a darkened color-mix, never raw neutral-500 on near-black.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "Geist carries display through label. No secondary display face; hierarchy is weight and size, not font pairing.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces are flat at rest. Stronger shadow appears only on floating layers (popover, toast, sheet).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the interface dark-first; streamers use this beside OBS in dim environments.",
+      "Do reserve #53FC18 for live status, primary CTAs, and draw climax moments.",
+      "Do use Geist at 14px for dense lists with label-weight buttons.",
+      "Do use tonal surface steps and hairline borders before reaching for shadow.",
+      "Do isolate playful motion to draw overlay and confetti; keep settings panels static."
+    ],
+    "donts": [
+      "Don't use generic SaaS landing patterns: cream backgrounds, purple gradients, hero metrics, identical icon-card grids.",
+      "Don't mimic Twitch-clone purple-heavy streaming tool aesthetics.",
+      "Don't use overdesigned UI: glassmorphism, gradient text, excessive decorative motion.",
+      "Don't put Kick green on large background fills or every button; it is signal, not theme paint.",
+      "Don't add uppercase eyebrow kickers above every section; one landing overline is enough.",
+      "Don't use side-stripe colored borders on list items or alerts.",
+      "Don't nest cards inside cards for participants/winners panels."
+    ]
+  }
+}
