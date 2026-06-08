@@ -135,7 +135,12 @@ export class GiveawayCollector {
       return;
     }
 
-    if (this.sessions.has(sessionId) || this.connectingSessions.has(sessionId)) {
+    if (this.connectingSessions.has(sessionId)) {
+      return;
+    }
+
+    if (this.sessions.has(sessionId)) {
+      this.ensureCountdownTimer(sessionId);
       return;
     }
 

@@ -404,6 +404,10 @@ const handleFinalizeDraw = async (
     return Response.json({ error: "Session not found." }, { status: 404 });
   }
 
+  if (state.isCountdownActive) {
+    await requestCollectorSync(sessionId);
+  }
+
   return Response.json({ state }, { status: 200 });
 };
 
