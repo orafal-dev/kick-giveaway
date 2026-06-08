@@ -1,20 +1,12 @@
 import { useOpenPanel } from "@openpanel/nextjs";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { KickChatMessage } from "@/App.types";
 import { buildGiveawayStartedProperties } from "@/analytics/giveaway-events";
 import { openpanelConfig } from "@/config/openpanel";
 import { devMode } from "@/config/devMode";
-import { KICK_WS_URLS } from "@/constants";
-import {
-  CONFETTI_DURATION_MS,
-  DEFAULT_SETTINGS,
-  RECENT_MESSAGES_LIMIT,
-  RECENT_MESSAGES_RETENTION_MS,
-} from "@/giveaway/giveaway.constants";
+import { DEFAULT_SETTINGS } from "@/giveaway/giveaway.constants";
 import {
   clearPersistedState,
   loadPersistedState,
-  savePersistedState,
 } from "@/giveaway/giveawayStorage";
 import type {
   ConnectionStatus,
@@ -25,27 +17,77 @@ import type {
   WinnerConfirmationMessage,
   WinnerRecord,
 } from "@/giveaway/giveaway.types";
-import {
-  appendConfirmationMessage,
-  createWinnerChatCapture,
-  isMessageFromPendingWinner,
-  isMessageFromWinnerChatCapture,
-  toConfirmationMessage,
-  type WinnerChatCapture,
-} from "@/giveaway/winnerChatMessages";
-import { pickWeightedWinner, normalizeValue } from "@/services/drawUtils";
-import { upgradeNoShowWinner } from "@/giveaway/winnerDisplay.utils";
+import { getEligibleDrawPool } from "@/services/kickEntrants";
+import { normalizeValue } from "@/services/drawUtils";
+import type { KickChatMessage } from "@/App.types";
+import type { GiveawaySessionState } from "@/server/giveaway/giveawaySession.types";
 import { fetchKickChannelInfo } from "@/services/kickApi";
+import { toChannelSessionPatch } from "@/services/kickApi.types";
 import {
-  createMockKickMessages,
-  seedEntrantsFromMockMessages,
-} from "@/services/devMockEntrants";
-import { getEligibleDrawPool, tryAddEntrant } from "@/services/kickEntrants";
-import { KickWebSocketManager } from "@/services/kickWebSocket";
+  ensureGiveawaySession,
+  fetchGiveawaySession,
+  finalizeGiveawayDraw,
+  getGiveawaySessionEventsUrl,
+  patchGiveawaySession,
+  runGiveawaySessionAction,
+  updateGiveawayDrawingDisplay,
+} from "@/services/giveawaySessionApi";
 
-export const useKickGiveaway = () => {
+const HEARTBEAT_INTERVAL_MS = 30_000;
+const SETTINGS_SYNC_DEBOUNCE_MS = 400;
+
+const applySessionState = (
+  setters: {
+    setChannelName: (value: string) => void;
+    setSettings: (value: GiveawaySettings) => void;
+    setEntrants: (value: Entrant[]) => void;
+    setWinners: (value: WinnerRecord[]) => void;
+    setPhase: (value: GiveawayPhase) => void;
+    setPendingWinner: (value: PendingWinner | null) => void;
+    setDrawCount: (value: number) => void;
+    setConnectionStatus: (value: ConnectionStatus) => void;
+    setErrorMessage: (value: string) => void;
+    setChannelModeMessage: (value: string) => void;
+    setLastMessages: (value: KickChatMessage[]) => void;
+    setPendingWinnerMessages: (value: WinnerConfirmationMessage[]) => void;
+    setIsDrawing: (value: boolean) => void;
+    setDrawTarget: (value: Entrant | null) => void;
+    setDisplayName: (value: string) => void;
+    setShowConfetti: (value: boolean) => void;
+    setCountdownSeconds: (value: number) => void;
+    setIsCountdownActive: (value: boolean) => void;
+    setGiveawayStarted: (value: boolean) => void;
+    setChannelSubscribersOnly: (value: boolean) => void;
+  },
+  state: GiveawaySessionState,
+): void => {
+  setters.setChannelName(state.channelName);
+  setters.setSettings(state.settings);
+  setters.setEntrants(state.entrants);
+  setters.setWinners(state.winners);
+  setters.setPhase(state.phase);
+  setters.setPendingWinner(state.pendingWinner);
+  setters.setDrawCount(state.drawCount);
+  setters.setConnectionStatus(state.connectionStatus);
+  setters.setErrorMessage(state.errorMessage);
+  setters.setChannelModeMessage(state.channelModeMessage);
+  setters.setLastMessages(state.lastMessages);
+  setters.setPendingWinnerMessages(state.pendingWinnerMessages);
+  setters.setIsDrawing(state.isDrawing);
+  setters.setDrawTarget(state.drawTarget);
+  setters.setDisplayName(state.displayName);
+  setters.setShowConfetti(state.showConfetti);
+  setters.setCountdownSeconds(state.countdownSeconds);
+  setters.setIsCountdownActive(state.isCountdownActive);
+  setters.setGiveawayStarted(state.giveawayStarted);
+  setters.setChannelSubscribersOnly(state.channelSubscribersOnly);
+};
+
+export const useKickGiveaway = (sessionId: string) => {
   const op = useOpenPanel();
   const [isPersistenceReady, setIsPersistenceReady] = useState(false);
+  const [isServerReady, setIsServerReady] = useState(false);
+  const [serverUnavailable, setServerUnavailable] = useState(false);
   const [channelName, setChannelName] = useState("");
   const [settings, setSettings] = useState<GiveawaySettings>({
     ...DEFAULT_SETTINGS,
@@ -60,7 +102,7 @@ export const useKickGiveaway = () => {
   const [isChannelStepComplete, setIsChannelStepComplete] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [channelModeMessage, setChannelModeMessage] = useState("");
-  const [channelSubscribersOnly, setChannelSubscribersOnly] = useState(false);
+  const [, setChannelSubscribersOnly] = useState(false);
   const [lastMessages, setLastMessages] = useState<KickChatMessage[]>([]);
   const [pendingWinnerMessages, setPendingWinnerMessages] = useState<
     WinnerConfirmationMessage[]
@@ -75,17 +117,51 @@ export const useKickGiveaway = () => {
   const [isCountdownActive, setIsCountdownActive] = useState(false);
   const [giveawayStarted, setGiveawayStarted] = useState(false);
 
-  const wsRef = useRef<KickWebSocketManager | null>(null);
-  const settingsRef = useRef(settings);
-  const pendingWinnerRef = useRef(pendingWinner);
-  const pendingWinnerMessagesRef = useRef(pendingWinnerMessages);
-  const winnerChatCaptureRef = useRef<WinnerChatCapture | null>(null);
-  const countdownActiveRef = useRef(isCountdownActive);
-  const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const channelSubscribersOnlyRef = useRef(channelSubscribersOnly);
-  const giveawayStartedRef = useRef(giveawayStarted);
-  const phaseRef = useRef(phase);
+  const latestUpdatedAtRef = useRef(0);
+  const settingsSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const hasTrackedGiveawayStartRef = useRef(false);
+  const channelNameRef = useRef(channelName);
+  const settingsRef = useRef(settings);
+
+  const stateSetters = useMemo(
+    () => ({
+      setChannelName,
+      setSettings,
+      setEntrants,
+      setWinners,
+      setPhase,
+      setPendingWinner,
+      setDrawCount,
+      setConnectionStatus,
+      setErrorMessage,
+      setChannelModeMessage,
+      setLastMessages,
+      setPendingWinnerMessages,
+      setIsDrawing,
+      setDrawTarget,
+      setDisplayName,
+      setShowConfetti,
+      setCountdownSeconds,
+      setIsCountdownActive,
+      setGiveawayStarted,
+      setChannelSubscribersOnly,
+    }),
+    [],
+  );
+
+  const applyServerState = useCallback(
+    (state: GiveawaySessionState): void => {
+      if (state.updatedAt < latestUpdatedAtRef.current) {
+        return;
+      }
+
+      latestUpdatedAtRef.current = state.updatedAt;
+      applySessionState(stateSetters, state);
+    },
+    [stateSetters],
+  );
 
   const channelLabel = useMemo(
     () => normalizeValue(channelName),
@@ -102,16 +178,19 @@ export const useKickGiveaway = () => {
   const winnersTargetReached =
     acceptedWinnersCount >= settings.winnersCount;
 
+  useEffect(() => {
+    channelNameRef.current = channelName;
+  }, [channelName]);
+
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+
   useLayoutEffect(() => {
     const persisted = loadPersistedState();
     if (persisted) {
       setChannelName(persisted.channelName);
       setSettings(persisted.settings);
-      setEntrants(persisted.entrants);
-      setWinners(persisted.winners);
-      setPhase(persisted.phase);
-      setPendingWinner(persisted.pendingWinner);
-      setDrawCount(persisted.drawCount);
       setCountdownSeconds(persisted.settings.confirmTimeSeconds);
       setIsChannelStepComplete(Boolean(persisted.channelName.trim()));
     }
@@ -120,250 +199,134 @@ export const useKickGiveaway = () => {
   }, []);
 
   useEffect(() => {
-    settingsRef.current = settings;
-  }, [settings]);
-
-  useEffect(() => {
-    pendingWinnerRef.current = pendingWinner;
-  }, [pendingWinner]);
-
-  useEffect(() => {
-    pendingWinnerMessagesRef.current = pendingWinnerMessages;
-  }, [pendingWinnerMessages]);
-
-  useEffect(() => {
-    countdownActiveRef.current = isCountdownActive;
-  }, [isCountdownActive]);
-
-  useEffect(() => {
-    channelSubscribersOnlyRef.current = channelSubscribersOnly;
-  }, [channelSubscribersOnly]);
-
-  useEffect(() => {
-    giveawayStartedRef.current = giveawayStarted;
-  }, [giveawayStarted]);
-
-  useEffect(() => {
-    phaseRef.current = phase;
-  }, [phase]);
-
-  useEffect(() => {
-    if (!isPersistenceReady) {
+    if (!isPersistenceReady || !sessionId) {
       return;
     }
 
-    savePersistedState({
-      channelName,
-      settings,
-      entrants,
-      winners,
-      phase,
-      pendingWinner,
-      drawCount,
-    });
-  }, [
-    isPersistenceReady,
-    channelName,
-    settings,
-    entrants,
-    winners,
-    phase,
-    pendingWinner,
-    drawCount,
-  ]);
+    let cancelled = false;
 
-  useEffect(() => {
-    const cleanupIntervalId = setInterval(() => {
-      const cutoff = Date.now() - RECENT_MESSAGES_RETENTION_MS;
-      setLastMessages((previousMessages) =>
-        previousMessages.filter((message) => message.timestamp >= cutoff),
-      );
-    }, 1_000);
+    const bootstrap = async (): Promise<void> => {
+      try {
+        const { state } = await ensureGiveawaySession({
+          sessionId,
+          channelName: channelNameRef.current,
+          settings: settingsRef.current,
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        applyServerState(state);
+        setIsChannelStepComplete(Boolean(state.channelName.trim()));
+        setServerUnavailable(false);
+        setIsServerReady(true);
+
+        if (
+          state.giveawayStarted ||
+          state.connectionStatus !== "idle" ||
+          Boolean(state.chatroomId)
+        ) {
+          try {
+            const { state: syncedState } = await runGiveawaySessionAction(
+              sessionId,
+              "sync",
+            );
+            if (!cancelled) {
+              applyServerState(syncedState);
+              setIsChannelStepComplete(
+                Boolean(syncedState.channelName.trim()),
+              );
+            }
+          } catch {
+            // Collector will catch up; SSE may deliver updates shortly.
+          }
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        setServerUnavailable(true);
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Server-side giveaway is unavailable.",
+        );
+        setIsServerReady(true);
+      }
+    };
+
+    void bootstrap();
 
     return () => {
-      clearInterval(cleanupIntervalId);
+      cancelled = true;
     };
-  }, []);
+  }, [applyServerState, isPersistenceReady, sessionId]);
 
-  const appendCapturedWinnerMessage = useCallback(
-    (chatMessage: KickChatMessage): WinnerConfirmationMessage[] | null => {
-      const capture = winnerChatCaptureRef.current;
-      if (!capture || Date.now() > capture.captureUntil) {
-        if (capture && Date.now() > capture.captureUntil) {
-          winnerChatCaptureRef.current = null;
-        }
-        return null;
-      }
-
-      if (!isMessageFromWinnerChatCapture(chatMessage, capture)) {
-        return null;
-      }
-
-      const entry = toConfirmationMessage(chatMessage);
-
-      if (pendingWinnerRef.current) {
-        const nextMessages = appendConfirmationMessage(
-          pendingWinnerMessagesRef.current,
-          entry,
-        );
-        pendingWinnerMessagesRef.current = nextMessages;
-        setPendingWinnerMessages(nextMessages);
-        return nextMessages;
-      }
-
-      setWinners((previousWinners) =>
-        previousWinners.map((winner) => {
-          if (
-            winner.userId !== capture.userId &&
-            normalizeValue(winner.username) !== normalizeValue(capture.username)
-          ) {
-            return winner;
-          }
-
-          return {
-            ...winner,
-            confirmationMessages: appendConfirmationMessage(
-              winner.confirmationMessages,
-              entry,
-            ),
-          };
-        }),
-      );
-
-      return null;
-    },
-    [],
-  );
-
-  const confirmWinner = useCallback(
-    (
-      username: string,
-      options: {
-        confirmedAt?: number | null;
-        showConfetti?: boolean;
-        noShow?: boolean;
-        confirmationMessages?: WinnerConfirmationMessage[];
-        userId?: string;
-      } = {},
-    ): void => {
-      const {
-        confirmedAt = Date.now(),
-        showConfetti = true,
-        noShow = false,
-        confirmationMessages = pendingWinnerMessagesRef.current,
-        userId = pendingWinnerRef.current?.userId ?? username,
-      } = options;
-
-      setWinners((previousWinners) => {
-        const existingIndex = previousWinners.findIndex(
-          (winner) =>
-            normalizeValue(winner.username) === normalizeValue(username),
-        );
-
-        if (existingIndex !== -1) {
-          const existing = previousWinners[existingIndex]!;
-
-          if (!existing.noShow) {
-            return previousWinners;
-          }
-
-          if (noShow) {
-            return previousWinners;
-          }
-
-          const upgradedWinners = upgradeNoShowWinner(
-            previousWinners,
-            username,
-            userId,
-            confirmedAt,
-            confirmationMessages,
-          );
-
-          if (!upgradedWinners) {
-            return previousWinners;
-          }
-
-          const acceptedCount = upgradedWinners.filter(
-            (winner) => !winner.noShow,
-          ).length;
-          setPhase(
-            acceptedCount >= settingsRef.current.winnersCount
-              ? "completed"
-              : "collecting",
-          );
-
-          return upgradedWinners;
-        }
-
-        const nextWinners = [
-          ...previousWinners,
-          {
-            username,
-            userId,
-            confirmedAt,
-            noShow,
-            drawIndex: previousWinners.length + 1,
-            confirmationMessages: noShow ? [] : [...confirmationMessages],
-          },
-        ];
-
-        const acceptedCount = nextWinners.filter(
-          (winner) => !winner.noShow,
-        ).length;
-        setPhase(
-          acceptedCount >= settingsRef.current.winnersCount
-            ? "completed"
-            : "collecting",
-        );
-
-        return nextWinners;
-      });
-
-      const pending = pendingWinnerRef.current;
-      if (!noShow && pending) {
-        winnerChatCaptureRef.current = createWinnerChatCapture(
-          userId,
-          username,
-          pending.startedAt,
-          settingsRef.current.confirmTimeSeconds,
-        );
-      } else {
-        winnerChatCaptureRef.current = null;
-      }
-
-      setPendingWinner(null);
-      pendingWinnerRef.current = null;
-      setPendingWinnerMessages([]);
-      pendingWinnerMessagesRef.current = [];
-      countdownActiveRef.current = false;
-      setIsCountdownActive(false);
-
-      if (!showConfetti) {
-        return;
-      }
-
-      setShowConfetti(true);
-
-      if (confettiTimeoutRef.current) {
-        clearTimeout(confettiTimeoutRef.current);
-      }
-
-      confettiTimeoutRef.current = setTimeout(() => {
-        setShowConfetti(false);
-        confettiTimeoutRef.current = null;
-      }, CONFETTI_DURATION_MS);
-    },
-    [],
-  );
-
-  const handleConfettiComplete = useCallback((): void => {
-    if (confettiTimeoutRef.current) {
-      clearTimeout(confettiTimeoutRef.current);
-      confettiTimeoutRef.current = null;
+  useEffect(() => {
+    if (!sessionId || !isServerReady || serverUnavailable) {
+      return;
     }
 
-    setShowConfetti(false);
-  }, []);
+    const source = new EventSource(getGiveawaySessionEventsUrl(sessionId));
+
+    source.onmessage = (event) => {
+      try {
+        const state = JSON.parse(event.data) as GiveawaySessionState;
+        applyServerState(state);
+      } catch {
+        // Ignore malformed SSE payloads.
+      }
+    };
+
+    source.onerror = () => {
+      setErrorMessage((previous) =>
+        previous || "Lost connection to giveaway session updates.",
+      );
+    };
+
+    return () => {
+      source.close();
+    };
+  }, [applyServerState, isServerReady, serverUnavailable, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || !isServerReady || serverUnavailable) {
+      return;
+    }
+
+    const heartbeatId = setInterval(() => {
+      void runGiveawaySessionAction(sessionId, "heartbeat").catch(() => {});
+    }, HEARTBEAT_INTERVAL_MS);
+
+    return () => {
+      clearInterval(heartbeatId);
+    };
+  }, [isServerReady, serverUnavailable, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || !isServerReady || serverUnavailable) {
+      return;
+    }
+
+    if (settingsSyncTimeoutRef.current) {
+      clearTimeout(settingsSyncTimeoutRef.current);
+    }
+
+    settingsSyncTimeoutRef.current = setTimeout(() => {
+      void patchGiveawaySession(sessionId, {
+        channelName: channelNameRef.current,
+        settings: settingsRef.current,
+      }).catch(() => {});
+    }, SETTINGS_SYNC_DEBOUNCE_MS);
+
+    return () => {
+      if (settingsSyncTimeoutRef.current) {
+        clearTimeout(settingsSyncTimeoutRef.current);
+      }
+    };
+  }, [channelName, isServerReady, serverUnavailable, sessionId, settings]);
 
   const trackGiveawayStarted = useCallback((): void => {
     if (!openpanelConfig.enabled || hasTrackedGiveawayStartRef.current) {
@@ -385,137 +348,50 @@ export const useKickGiveaway = () => {
     hasTrackedGiveawayStartRef.current = false;
   }, []);
 
-  const seedDevEntrantsIfEnabled = useCallback((): void => {
-    if (!devMode.enabled) {
-      return;
-    }
-
-    const keyword = settingsRef.current.keyword;
-    const messages = createMockKickMessages(devMode.mockEntrantCount, keyword);
-
-    setEntrants((previousEntrants) =>
-      seedEntrantsFromMockMessages(
-        previousEntrants,
-        messages,
-        settingsRef.current,
-        channelSubscribersOnlyRef.current,
-      ),
-    );
-  }, []);
-
-  const handleKickMessage = useCallback(
-    (chatMessage: KickChatMessage): void => {
-      const cutoff = Date.now() - RECENT_MESSAGES_RETENTION_MS;
-      setLastMessages((previousMessages) =>
-        [chatMessage, ...previousMessages]
-          .filter((message) => message.timestamp >= cutoff)
-          .slice(0, RECENT_MESSAGES_LIMIT),
-      );
-
-      if (winnerChatCaptureRef.current || pendingWinnerRef.current) {
-        appendCapturedWinnerMessage(chatMessage);
-      }
-
-      const pending = pendingWinnerRef.current;
-      if (
-        countdownActiveRef.current &&
-        pending &&
-        isMessageFromPendingWinner(chatMessage, pending)
-      ) {
-        confirmWinner(pending.username, {
-          confirmationMessages: pendingWinnerMessagesRef.current,
-        });
-      }
-
-      if (
-        !giveawayStartedRef.current ||
-        phaseRef.current === "idle" ||
-        phaseRef.current === "connecting"
-      ) {
-        return;
-      }
-
-      setEntrants((previousEntrants) =>
-        tryAddEntrant(
-          previousEntrants,
-          chatMessage,
-          settingsRef.current,
-          channelSubscribersOnlyRef.current,
-        ),
-      );
-    },
-    [appendCapturedWinnerMessage, confirmWinner],
-  );
-
-  const connectToChannel = useCallback(async (): Promise<boolean> => {
-    if (!channelLabel) {
-      setErrorMessage("Enter a Kick channel name.");
+  const resolveChannelMetadata = useCallback(async (): Promise<boolean> => {
+    if (!channelLabel || !sessionId || serverUnavailable) {
       return false;
     }
 
-    setConnectionStatus("connecting");
-    setPhase("connecting");
-    setErrorMessage("");
-    setChannelModeMessage("");
-
     try {
-      const { chatroomId, channelId, subscribersOnlyMode } =
-        await fetchKickChannelInfo(channelLabel);
-
-      setChannelSubscribersOnly(subscribersOnlyMode);
-
-      if (wsRef.current) {
-        wsRef.current.disconnect();
-      }
-
-      const manager = new KickWebSocketManager([...KICK_WS_URLS]);
-      wsRef.current = manager;
-
-      manager.on("disconnect", () => {
-        setConnectionStatus("idle");
-        if (giveawayStarted) {
-          setPhase("idle");
-        }
-      });
-
-      manager.on("error", (message) => {
-        setErrorMessage(message);
-        setConnectionStatus("idle");
-        setPhase("idle");
-      });
-
-      manager.on("message", handleKickMessage);
-      manager.on("subscription_ready", () => {
-        setConnectionStatus("connected");
-        if (giveawayStartedRef.current) {
-          setPhase("collecting");
-          seedDevEntrantsIfEnabled();
-          trackGiveawayStarted();
-          return;
-        }
-
-        setPhase("idle");
-      });
-
-      manager.connect(chatroomId, channelId);
+      const channelInfo = await fetchKickChannelInfo(channelLabel);
+      await patchGiveawaySession(
+        sessionId,
+        toChannelSessionPatch(channelNameRef.current, channelInfo),
+      );
       return true;
     } catch (error) {
-      setConnectionStatus("idle");
-      setPhase("idle");
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Failed to connect to channel.",
+          : "Failed to resolve Kick channel.",
       );
       return false;
     }
-  }, [
-    channelLabel,
-    giveawayStarted,
-    handleKickMessage,
-    seedDevEntrantsIfEnabled,
-    trackGiveawayStarted,
-  ]);
+  }, [channelLabel, serverUnavailable, sessionId]);
+
+  const runAction = useCallback(
+    async (
+      action: Parameters<typeof runGiveawaySessionAction>[1],
+      payload: Record<string, unknown> = {},
+    ): Promise<void> => {
+      if (!sessionId || serverUnavailable) {
+        return;
+      }
+
+      const { state } = await runGiveawaySessionAction(
+        sessionId,
+        action,
+        payload,
+      );
+      applyServerState(state);
+    },
+    [applyServerState, serverUnavailable, sessionId],
+  );
+
+  const handleConfettiComplete = useCallback((): void => {
+    void runAction("confetti-complete");
+  }, [runAction]);
 
   const handleStartGiveaway = useCallback(async (): Promise<void> => {
     if (!channelLabel) {
@@ -523,23 +399,24 @@ export const useKickGiveaway = () => {
       return;
     }
 
-    setErrorMessage("");
-    setGiveawayStarted(true);
-    setPhase("connecting");
-
-    if (connectionStatus !== "connected") {
-      await connectToChannel();
-      return;
+    if (sessionId && !serverUnavailable) {
+      const { state } = await fetchGiveawaySession(sessionId);
+      if (!state.chatroomId) {
+        const resolved = await resolveChannelMetadata();
+        if (!resolved) {
+          return;
+        }
+      }
     }
 
-    setPhase("collecting");
-    seedDevEntrantsIfEnabled();
+    await runAction("start");
     trackGiveawayStarted();
   }, [
     channelLabel,
-    connectToChannel,
-    connectionStatus,
-    seedDevEntrantsIfEnabled,
+    resolveChannelMetadata,
+    runAction,
+    serverUnavailable,
+    sessionId,
     trackGiveawayStarted,
   ]);
 
@@ -551,161 +428,59 @@ export const useKickGiveaway = () => {
 
     setErrorMessage("");
     setIsChannelStepComplete(true);
-    await connectToChannel();
-  }, [channelLabel, connectToChannel]);
 
-  const handleChangeChannel = useCallback((): void => {
-    wsRef.current?.disconnect();
-    wsRef.current = null;
+    const resolved = await resolveChannelMetadata();
+    if (!resolved) {
+      setIsChannelStepComplete(false);
+      return;
+    }
+
+    await runAction("connect");
+  }, [channelLabel, resolveChannelMetadata, runAction]);
+
+  const handleChangeChannel = useCallback(async (): Promise<void> => {
     resetGiveawayStartTracking();
-    setConnectionStatus("idle");
-    setGiveawayStarted(false);
-    setPhase("idle");
     setIsChannelStepComplete(false);
-    setChannelModeMessage("");
-    setPendingWinner(null);
-    setPendingWinnerMessages([]);
-    winnerChatCaptureRef.current = null;
-    setIsDrawing(false);
-    setDisplayName("");
-    countdownActiveRef.current = false;
-    setIsCountdownActive(false);
-  }, [resetGiveawayStartTracking]);
+    await runAction("change-channel");
+  }, [resetGiveawayStartTracking, runAction]);
 
-  const handleClearAllData = useCallback((): void => {
-    wsRef.current?.disconnect();
-    wsRef.current = null;
+  const handleClearAllData = useCallback(async (): Promise<void> => {
     resetGiveawayStartTracking();
     clearPersistedState();
+    await runAction("clear");
     setChannelName("");
     setSettings({ ...DEFAULT_SETTINGS });
-    setEntrants([]);
-    setWinners([]);
-    setPhase("idle");
-    setPendingWinner(null);
-    setPendingWinnerMessages([]);
-    winnerChatCaptureRef.current = null;
-    setDrawCount(0);
-    setConnectionStatus("idle");
-    setGiveawayStarted(false);
     setIsChannelStepComplete(false);
-    setErrorMessage("");
-    setChannelModeMessage("");
-    setLastMessages([]);
-    setIsDrawing(false);
-    setDisplayName("");
-    setShowConfetti(false);
-    countdownActiveRef.current = false;
-    setIsCountdownActive(false);
-    setCountdownSeconds(DEFAULT_SETTINGS.confirmTimeSeconds);
-  }, [resetGiveawayStartTracking]);
+  }, [resetGiveawayStartTracking, runAction]);
 
-  const handleReset = useCallback((): void => {
+  const handleReset = useCallback(async (): Promise<void> => {
     resetGiveawayStartTracking();
-    setGiveawayStarted(false);
-    setPhase("idle");
-    setEntrants([]);
-    setWinners([]);
-    setPendingWinner(null);
-    pendingWinnerRef.current = null;
-    setPendingWinnerMessages([]);
-    pendingWinnerMessagesRef.current = [];
-    winnerChatCaptureRef.current = null;
-    setDrawCount(0);
-    setIsDrawing(false);
-    setDrawTarget(null);
-    setDisplayName("");
-    setShowConfetti(false);
-    if (confettiTimeoutRef.current) {
-      clearTimeout(confettiTimeoutRef.current);
-      confettiTimeoutRef.current = null;
-    }
-    countdownActiveRef.current = false;
-    setIsCountdownActive(false);
-    setCountdownSeconds(settings.confirmTimeSeconds);
-  }, [resetGiveawayStartTracking, settings.confirmTimeSeconds]);
+    await runAction("reset");
+  }, [resetGiveawayStartTracking, runAction]);
 
   const finalizeDraw = useCallback(
-    (winner: Entrant): void => {
-      setDisplayName(winner.username);
-      setIsDrawing(false);
-      setDrawTarget(null);
-      setDrawCount((previous) => previous + 1);
-
-      if (settingsRef.current.winnerConfirmationEnabled) {
-        const startedAt = Date.now();
-        setPendingWinnerMessages([]);
-        pendingWinnerMessagesRef.current = [];
-        winnerChatCaptureRef.current = createWinnerChatCapture(
-          winner.userId,
-          winner.username,
-          startedAt,
-          settingsRef.current.confirmTimeSeconds,
-        );
-        setPendingWinner({
-          username: winner.username,
-          userId: winner.userId,
-          startedAt,
-        });
-        pendingWinnerRef.current = {
-          username: winner.username,
-          userId: winner.userId,
-          startedAt,
-        };
-        setCountdownSeconds(settingsRef.current.confirmTimeSeconds);
-        countdownActiveRef.current = true;
-        setIsCountdownActive(true);
-        setPhase("awaitingConfirmation");
+    async (winner: Entrant): Promise<void> => {
+      if (!sessionId || serverUnavailable) {
         return;
       }
 
-      confirmWinner(winner.username, {
-        confirmedAt: null,
-        showConfetti: true,
-        noShow: false,
-        confirmationMessages: [],
-      });
+      const { state } = await finalizeGiveawayDraw(sessionId, { winner });
+      applyServerState(state);
     },
-    [confirmWinner],
+    [applyServerState, serverUnavailable, sessionId],
   );
 
-  const handleDrawWinner = useCallback((): void => {
-    if (drawPool.length === 0 || isDrawing || winnersTargetReached) {
-      return;
-    }
+  const handleDrawWinner = useCallback(async (): Promise<void> => {
+    await runAction("draw");
+  }, [runAction]);
 
-    const winner = pickWeightedWinner(drawPool);
-    if (!winner) {
-      return;
-    }
+  const handleManualConfirm = useCallback(async (): Promise<void> => {
+    await runAction("confirm");
+  }, [runAction]);
 
-    setDrawTarget(winner);
-    setIsDrawing(true);
-    setPhase("drawing");
-    setDisplayName("");
-    countdownActiveRef.current = false;
-    setIsCountdownActive(false);
-    setShowConfetti(false);
-    winnerChatCaptureRef.current = null;
-  }, [drawPool, isDrawing, winnersTargetReached]);
-
-  const handleManualConfirm = useCallback((): void => {
-    if (!pendingWinner) {
-      return;
-    }
-
-    confirmWinner(pendingWinner.username, {
-      confirmationMessages: [...pendingWinnerMessagesRef.current],
-    });
-  }, [confirmWinner, pendingWinner]);
-
-  const handleDisconnect = useCallback((): void => {
-    wsRef.current?.disconnect();
-    wsRef.current = null;
-    setConnectionStatus("idle");
-    setPhase("idle");
-    setGiveawayStarted(false);
-  }, []);
+  const handleDisconnect = useCallback(async (): Promise<void> => {
+    await runAction("stop");
+  }, [runAction]);
 
   const updateSettings = useCallback(
     (partial: Partial<GiveawaySettings>): void => {
@@ -714,71 +489,20 @@ export const useKickGiveaway = () => {
     [],
   );
 
-  useEffect(() => {
-    if (!isCountdownActive) {
-      return;
-    }
+  const setDisplayNameOnServer = useCallback(
+    async (nextDisplayName: string): Promise<void> => {
+      setDisplayName(nextDisplayName);
 
-    const intervalId = setInterval(() => {
-      setCountdownSeconds((previousSeconds) => {
-        if (previousSeconds <= 1) {
-          countdownActiveRef.current = false;
-          setIsCountdownActive(false);
-          if (pendingWinnerRef.current) {
-            confirmWinner(pendingWinnerRef.current.username, {
-              confirmedAt: null,
-              showConfetti: false,
-              noShow: true,
-              confirmationMessages: [],
-            });
-          }
-          return 0;
-        }
+      if (!sessionId || serverUnavailable) {
+        return;
+      }
 
-        return previousSeconds - 1;
+      await updateGiveawayDrawingDisplay(sessionId, {
+        displayName: nextDisplayName,
       });
-    }, 1_000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [confirmWinner, isCountdownActive]);
-
-  useEffect(() => {
-    if (connectionStatus !== "connected") {
-      return;
-    }
-
-    const manager = wsRef.current;
-    if (!manager) {
-      return;
-    }
-
-    wsRef.current = manager;
-
-    return () => {
-      manager.disconnect();
-      if (wsRef.current === manager) {
-        wsRef.current = null;
-      }
-    };
-  }, [connectionStatus]);
-
-  useEffect(() => {
-    if (!showConfetti) {
-      return;
-    }
-
-    const confettiTimeout = confettiTimeoutRef.current;
-    confettiTimeoutRef.current = confettiTimeout;
-
-    return () => {
-      if (confettiTimeout) {
-        clearTimeout(confettiTimeout);
-        confettiTimeoutRef.current = null;
-      }
-    };
-  }, [showConfetti]);
+    },
+    [serverUnavailable, sessionId],
+  );
 
   return {
     channelName,
@@ -791,7 +515,7 @@ export const useKickGiveaway = () => {
     pendingWinner,
     drawCount,
     connectionStatus,
-    isPersistenceReady,
+    isPersistenceReady: isPersistenceReady && isServerReady,
     isChannelStepComplete,
     errorMessage,
     channelModeMessage,
@@ -801,7 +525,7 @@ export const useKickGiveaway = () => {
     drawTarget,
     setDrawTarget,
     displayName,
-    setDisplayName,
+    setDisplayName: setDisplayNameOnServer,
     showConfetti,
     handleConfettiComplete,
     countdownSeconds,
@@ -810,7 +534,6 @@ export const useKickGiveaway = () => {
     drawPool,
     winnersTargetReached,
     channelLabel,
-    connectToChannel,
     handleStartGiveaway,
     handleChannelLandingSubmit,
     handleChangeChannel,
@@ -824,5 +547,7 @@ export const useKickGiveaway = () => {
     setPhase,
     devModeEnabled: devMode.enabled,
     devMockEntrantCount: devMode.mockEntrantCount,
+    serverUnavailable,
+    sessionId,
   };
 };

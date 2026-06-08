@@ -1,5 +1,6 @@
 import type { KickChannelResponse, KickChatroomData } from "@/App.types";
 
+/** Resolve channel metadata from the browser. Kick blocks server-side fetches (403). */
 export const fetchKickChannelInfo = async (
   channelName: string,
 ): Promise<KickChatroomData> => {

@@ -15,15 +15,53 @@ Free Kick.com chat giveaway tool for streamers. Connect a channel, collect entra
 ```bash
 npm install
 cp .env.example .env.local
-npm run dev
+npm run dev:stack
 ```
 
+`dev:stack` starts Redis in Docker and runs the embedded chat collector inside Next.js.
+
 Open [http://localhost:3000](http://localhost:3000).
+
+### Server-side chat collection
+
+Giveaway entrants are collected on the server so the control tab can be closed after starting a giveaway.
+
+| Component | Role |
+| --- | --- |
+| Redis | Stores giveaway session state and pub/sub events |
+| Collector | Maintains Kick WebSocket connections per active session |
+| Next.js API | Session CRUD, actions, and SSE updates to the browser |
+
+Local options:
+
+```bash
+# Redis (docker-compose.dev.yml) + embedded collector in Next.js
+npm run dev:stack
+
+# Or run Redis, Next.js, and a separate collector process
+docker compose -f docker-compose.dev.yml up -d redis
+REDIS_URL=redis://127.0.0.1:6379 npm run dev
+REDIS_URL=redis://127.0.0.1:6379 npm run collector
+```
+
+### Coolify (production)
+
+Deploy **two applications from this repo** plus **Coolify's managed Redis** — no docker-compose:
+
+| Source | Service |
+| --- | --- |
+| Coolify Redis | Session store |
+| `Dockerfile.collector` | Kick chat collector worker |
+| `Dockerfile` | Next.js web app |
+
+See [DEPLOY.md](./DEPLOY.md) for step-by-step Coolify setup.
 
 ### Environment variables
 
 | Variable | Description |
 | --- | --- |
+| `REDIS_URL` | Redis connection URL for server-side giveaway sessions |
+| `COLLECTOR_MODE` | Local dev only — `embedded` runs the collector inside Next.js. Omit on Coolify when using `Dockerfile.collector`. |
 | `NEXT_PUBLIC_DEV_MODE` | When `true`, seeds mock chat entrants during the collecting phase |
 | `NEXT_PUBLIC_DEV_MOCK_ENTRANT_COUNT` | Number of synthetic entrants (default `300`) |
 
@@ -34,11 +72,16 @@ npm run build
 npm run start
 ```
 
-### Docker
+### Docker images
 
 ```bash
-docker build -t kick-giveaway .
-docker run -p 3000:3000 kick-giveaway
+# Web app
+docker build -f Dockerfile -t kickaway-app .
+
+# Chat collector worker
+docker build -f Dockerfile.collector -t kickaway-collector .
 ```
 
-The image uses Next.js `output: "standalone"` and serves on port 3000.
+Redis: use Coolify's managed Redis service in production, or `docker compose -f docker-compose.dev.yml up -d redis` locally.
+
+The web image uses Next.js `output: "standalone"` and serves on port 3000.

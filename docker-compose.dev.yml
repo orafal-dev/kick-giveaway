@@ -1,0 +1,13 @@
+# Local development only — do not deploy on Coolify.
+# Production Redis: use Coolify's managed Redis service.
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-dev-data:/data
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "yes", "--dir", "/data"]
+
+volumes:
+  redis-dev-data:

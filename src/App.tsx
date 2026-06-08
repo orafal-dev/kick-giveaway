@@ -26,6 +26,7 @@ import { VersionDisplay } from "@/components/VersionDisplay";
 import { useKickGiveaway } from "@/hooks/useKickGiveaway";
 import { useOverlayBroadcast } from "@/hooks/useOverlayBroadcast";
 import { useOverlayLayout } from "@/hooks/useOverlayLayout";
+import { getOrCreateAppSessionId } from "@/lib/appSession";
 
 const isEditableElement = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {
@@ -41,7 +42,8 @@ const isEditableElement = (target: EventTarget | null): boolean => {
 };
 
 function App() {
-  const giveaway = useKickGiveaway();
+  const sessionId = useMemo(() => getOrCreateAppSessionId(), []);
+  const giveaway = useKickGiveaway(sessionId);
   const { layout: overlayLayout, updateLayout: updateOverlayLayout } =
     useOverlayLayout();
   const { finalizeDraw } = giveaway;
@@ -217,6 +219,13 @@ function App() {
             onChangeChannel={giveaway.handleChangeChannel}
             onClearAllData={giveaway.handleClearAllData}
           />
+
+          {giveaway.serverUnavailable ? (
+            <p className="text-sm text-destructive" role="alert">
+              Server-side giveaway collection is unavailable. Start Redis and
+              the collector process, then reload this page.
+            </p>
+          ) : null}
 
           {giveaway.errorMessage ? (
             <p className="text-sm text-destructive" role="alert">
