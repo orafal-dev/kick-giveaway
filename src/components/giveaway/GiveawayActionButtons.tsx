@@ -29,7 +29,7 @@ export const GiveawayActionButtons = ({
         <Button
           type="button"
           className="min-w-0 flex-1 border-border/80 bg-[#1c1c1f]"
-          size="lg"
+          size="2xl"
           variant="outline"
           onClick={handleReset}
           disabled={connectionStatus === "connecting"}
@@ -47,7 +47,7 @@ export const GiveawayActionButtons = ({
         <Button
           type="button"
           className={showReset ? "min-w-0 flex-[1.4]" : "w-full"}
-          size="lg"
+          size="2xl"
           variant="kick"
           onClick={onStartGiveaway}
           disabled={connectionStatus === "connecting"}
