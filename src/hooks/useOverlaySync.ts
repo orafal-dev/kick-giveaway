@@ -6,16 +6,18 @@ import {
   subscribeOverlayStateLocal,
 } from "@/overlay/overlaySync";
 
-/** Overlay open with no synced session yet. */
-const COLD_POLL_INTERVAL_MS = 10_000;
+/** Waiting for the control panel to publish the first overlay state. */
+const WAITING_FOR_SYNC_POLL_MS = 2_000;
 /** Giveaway running but between draws — overlay is empty. */
 const WARM_POLL_INTERVAL_MS = 4_000;
 /** Drawing, confetti, or confirmation countdown. */
 const HOT_POLL_INTERVAL_MS = 1_000;
+/** Idle overlay with a synced session. */
+const IDLE_POLL_INTERVAL_MS = 10_000;
 
 const getPollIntervalMs = (state: OverlaySyncPayload | null): number => {
   if (!state) {
-    return COLD_POLL_INTERVAL_MS;
+    return WAITING_FOR_SYNC_POLL_MS;
   }
 
   if (
@@ -30,7 +32,7 @@ const getPollIntervalMs = (state: OverlaySyncPayload | null): number => {
     return WARM_POLL_INTERVAL_MS;
   }
 
-  return COLD_POLL_INTERVAL_MS;
+  return IDLE_POLL_INTERVAL_MS;
 };
 
 export const useOverlaySync = (sessionId: string): OverlaySyncPayload | null => {
@@ -38,6 +40,7 @@ export const useOverlaySync = (sessionId: string): OverlaySyncPayload | null => 
   const latestUpdatedAtRef = useRef(0);
   const stateRef = useRef<OverlaySyncPayload | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollRef = useRef<() => Promise<void>>(async () => {});
 
   const applyState = useCallback((payload: OverlaySyncPayload): void => {
     if (payload.updatedAt < latestUpdatedAtRef.current) {
@@ -76,7 +79,7 @@ export const useOverlaySync = (sessionId: string): OverlaySyncPayload | null => 
       clearPollTimeout();
       pollTimeoutRef.current = setTimeout(() => {
         pollTimeoutRef.current = null;
-        void poll();
+        void pollRef.current();
       }, delayMs);
     };
 
@@ -98,6 +101,13 @@ export const useOverlaySync = (sessionId: string): OverlaySyncPayload | null => 
       scheduleNextPoll(getPollIntervalMs(remoteState ?? stateRef.current));
     };
 
+    pollRef.current = poll;
+
+    const requestImmediatePoll = (): void => {
+      clearPollTimeout();
+      void poll();
+    };
+
     void poll();
 
     const unsubscribe = subscribeOverlayStateLocal((payload) => {
@@ -105,10 +115,17 @@ export const useOverlaySync = (sessionId: string): OverlaySyncPayload | null => 
       scheduleNextPoll(getPollIntervalMs(payload));
     });
 
+    window.addEventListener("focus", requestImmediatePoll);
+    window.addEventListener("pageshow", requestImmediatePoll);
+    document.addEventListener("visibilitychange", requestImmediatePoll);
+
     return () => {
       cancelled = true;
       clearPollTimeout();
       unsubscribe();
+      window.removeEventListener("focus", requestImmediatePoll);
+      window.removeEventListener("pageshow", requestImmediatePoll);
+      document.removeEventListener("visibilitychange", requestImmediatePoll);
     };
   }, [applyState, sessionId]);
 

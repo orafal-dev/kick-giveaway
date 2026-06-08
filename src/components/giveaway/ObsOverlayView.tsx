@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { DrawAnimation } from "@/components/giveaway/DrawAnimation";
 import { GiveawayConfetti } from "@/components/giveaway/GiveawayConfetti";
 import { OverlayAnchorSlot } from "@/components/giveaway/OverlayAnchorSlot";
@@ -11,6 +18,7 @@ import { useOverlaySync } from "@/hooks/useOverlaySync";
 import { DEFAULT_OVERLAY_LAYOUT } from "@/overlay/overlayLayout.constants";
 import type { OverlayLayoutSettings } from "@/overlay/overlayLayout.types";
 import type { OverlayDrawSnapshot } from "@/overlay/overlayDrawSnapshot.types";
+import { enableOverlayObsKeepAlive } from "@/overlay/overlayKeepAlive";
 import { cn } from "@/lib/utils";
 
 interface ObsOverlayViewProps {
@@ -41,6 +49,10 @@ export const ObsOverlayView = ({
   const wasDrawingRef = useRef(false);
   const drawSessionCounterRef = useRef(0);
 
+  useLayoutEffect(() => {
+    enableOverlayObsKeepAlive();
+  }, []);
+
   useEffect(() => {
     const handleResize = (): void => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight });
@@ -55,7 +67,10 @@ export const ObsOverlayView = ({
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("overlay-transparent", transparent);
+    document.documentElement.classList.toggle(
+      "overlay-transparent",
+      transparent,
+    );
     document.body.classList.toggle("overlay-transparent", transparent);
 
     return () => {
@@ -140,7 +155,8 @@ export const ObsOverlayView = ({
   const isNoShow = state?.latestWinnerNoShow === true;
 
   const resultResetKey = useMemo(
-    () => `${state?.drawCount ?? 0}:${visibleName}:${isNoShow ? "noshow" : "winner"}`,
+    () =>
+      `${state?.drawCount ?? 0}:${visibleName}:${isNoShow ? "noshow" : "winner"}`,
     [isNoShow, state?.drawCount, visibleName],
   );
 
@@ -169,21 +185,23 @@ export const ObsOverlayView = ({
     (showWinnerResult && !winnerDismiss.dismissed) ||
     (showNoShowResult && !noShowDismiss.dismissed);
 
-  if (!hasVisibleContent) {
-    return (
-      <div
-        className={cn(
-          "min-h-dvh w-full",
-          transparent ? "bg-transparent" : "bg-background",
-        )}
-        aria-hidden="true"
-      />
-    );
-  }
-
   const resultFadeClassName = cn(
     "transition-opacity duration-[600ms] ease-out",
   );
+
+  if (!hasVisibleContent) {
+    return (
+      <>
+        <div
+          className={cn(
+            "min-h-dvh w-full",
+            transparent ? "bg-transparent" : "bg-background",
+          )}
+          aria-hidden="true"
+        />
+      </>
+    );
+  }
 
   return (
     <div
@@ -193,10 +211,7 @@ export const ObsOverlayView = ({
       )}
     >
       {showConfetti ? (
-        <GiveawayConfetti
-          width={windowSize.width}
-          height={windowSize.height}
-        />
+        <GiveawayConfetti width={windowSize.width} height={windowSize.height} />
       ) : null}
 
       {isDrawing && drawSnapshot ? (
@@ -292,7 +307,9 @@ export const ObsOverlayView = ({
             <p
               className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-muted-foreground"
               style={
-                transparent ? { textShadow: "0 1px 12px rgba(0,0,0,0.8)" } : undefined
+                transparent
+                  ? { textShadow: "0 1px 12px rgba(0,0,0,0.8)" }
+                  : undefined
               }
             >
               Winner
@@ -327,7 +344,9 @@ export const ObsOverlayView = ({
             <p
               className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-destructive"
               style={
-                transparent ? { textShadow: "0 1px 12px rgba(0,0,0,0.8)" } : undefined
+                transparent
+                  ? { textShadow: "0 1px 12px rgba(0,0,0,0.8)" }
+                  : undefined
               }
             >
               No show

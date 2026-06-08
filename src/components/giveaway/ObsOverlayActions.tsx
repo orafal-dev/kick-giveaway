@@ -46,6 +46,7 @@ export const ObsOverlayActions = ({
         variant="outline"
         onClick={() => void handleCopyUrl()}
         aria-label="Copy OBS overlay URL"
+        title="In OBS, keep this source on your live scene. Avoid Shutdown source when not visible."
       >
         {copied ? "Copied OBS overlay URL" : "Copy OBS overlay URL"}
       </Button>
