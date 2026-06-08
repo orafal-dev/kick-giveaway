@@ -40,7 +40,7 @@ export const ObsOverlayView = ({
   const state = useOverlaySync(sessionId);
   const layout = state?.layout ?? initialLayout;
 
-  const [localDisplayName, setLocalDisplayName] = useState("");
+  const [animatedDisplayName, setAnimatedDisplayName] = useState("");
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [drawSnapshot, setDrawSnapshot] = useState<OverlayDrawSnapshot | null>(
     null,
@@ -102,35 +102,27 @@ export const ObsOverlayView = ({
       animationDurationSeconds: state.animationDurationSeconds,
     });
     setIsLocalDrawAnimating(true);
-    setLocalDisplayName("");
-  }, [state?.isDrawing, state?.drawTarget?.userId]);
+    setAnimatedDisplayName("");
+  }, [
+    state?.animationDurationSeconds,
+    state?.animationMode,
+    state?.drawPool,
+    state?.drawTarget,
+    state?.isDrawing,
+  ]);
 
-  useEffect(() => {
-    if (!state) {
-      return;
-    }
-
-    if (isLocalDrawAnimating) {
-      return;
-    }
-
-    const syncedName = getVisibleName(
-      state.displayName,
-      state.pendingWinner?.username ?? null,
-    );
-
-    if (syncedName) {
-      setLocalDisplayName(syncedName);
-      return;
-    }
-
-    if (!state.displayName && !state.pendingWinner) {
-      setLocalDisplayName("");
-    }
-  }, [isLocalDrawAnimating, state]);
+  const syncedDisplayName = state
+    ? getVisibleName(
+        state.displayName,
+        state.pendingWinner?.username ?? null,
+      )
+    : "";
+  const localDisplayName = isLocalDrawAnimating
+    ? animatedDisplayName
+    : syncedDisplayName;
 
   const handleAnimationComplete = useCallback((winner: Entrant): void => {
-    setLocalDisplayName(winner.username);
+    setAnimatedDisplayName(winner.username);
     setIsLocalDrawAnimating(false);
     setDrawSnapshot(null);
   }, []);
@@ -226,7 +218,7 @@ export const ObsOverlayView = ({
               entrants={drawSnapshot.drawPool}
               winner={drawSnapshot.drawTarget}
               isActive
-              onDisplayChange={setLocalDisplayName}
+              onDisplayChange={setAnimatedDisplayName}
               onComplete={handleAnimationComplete}
               className={cn(
                 "pointer-events-none",
@@ -261,7 +253,7 @@ export const ObsOverlayView = ({
                 entrants={drawSnapshot.drawPool}
                 winner={drawSnapshot.drawTarget}
                 isActive
-                onDisplayChange={setLocalDisplayName}
+                onDisplayChange={setAnimatedDisplayName}
                 onComplete={handleAnimationComplete}
               />
             </div>

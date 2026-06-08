@@ -46,7 +46,13 @@ function App() {
   const { finalizeDraw } = giveaway;
   const { resolvedTheme, setTheme } = useTheme();
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-  const [overlayDrawerOpen, setOverlayDrawerOpen] = useState(false);
+  const [overlayDrawerOpen, setOverlayDrawerOpen] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return new URLSearchParams(window.location.search).get("overlay") === "1";
+  });
 
   const handleToggleTheme = useCallback((): void => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
@@ -67,17 +73,6 @@ function App() {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("overlay") === "1") {
-      setOverlayDrawerOpen(true);
-    }
   }, []);
 
   useHotkey("D", (event) => {

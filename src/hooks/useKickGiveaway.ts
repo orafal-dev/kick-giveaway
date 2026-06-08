@@ -1,5 +1,5 @@
 import { useOpenPanel } from "@openpanel/nextjs";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildGiveawayStartedProperties } from "@/analytics/giveaway-events";
 import { openpanelConfig } from "@/config/openpanel";
 import { devMode } from "@/config/devMode";
@@ -84,15 +84,33 @@ const applySessionState = (
   setters.setChannelSubscribersOnly(state.channelSubscribersOnly);
 };
 
+const getPersistedBootstrap = () => {
+  const persisted = loadPersistedState();
+
+  if (!persisted) {
+    return null;
+  }
+
+  return {
+    channelName: persisted.channelName,
+    settings: persisted.settings,
+    countdownSeconds: persisted.settings.confirmTimeSeconds,
+    isChannelStepComplete: Boolean(persisted.channelName.trim()),
+  };
+};
+
 export const useKickGiveaway = (sessionId: string) => {
   const op = useOpenPanel();
-  const [isPersistenceReady, setIsPersistenceReady] = useState(false);
+  const [persistedBootstrap] = useState(getPersistedBootstrap);
+  const [isPersistenceReady] = useState(true);
   const [isServerReady, setIsServerReady] = useState(false);
   const [serverUnavailable, setServerUnavailable] = useState(false);
-  const [channelName, setChannelName] = useState("");
-  const [settings, setSettings] = useState<GiveawaySettings>({
-    ...DEFAULT_SETTINGS,
-  });
+  const [channelName, setChannelName] = useState(
+    () => persistedBootstrap?.channelName ?? "",
+  );
+  const [settings, setSettings] = useState<GiveawaySettings>(
+    () => persistedBootstrap?.settings ?? { ...DEFAULT_SETTINGS },
+  );
   const [entrants, setEntrants] = useState<Entrant[]>([]);
   const [winners, setWinners] = useState<WinnerRecord[]>([]);
   const [phase, setPhase] = useState<GiveawayPhase>("idle");
@@ -100,7 +118,9 @@ export const useKickGiveaway = (sessionId: string) => {
   const [drawCount, setDrawCount] = useState(0);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("idle");
-  const [isChannelStepComplete, setIsChannelStepComplete] = useState(false);
+  const [isChannelStepComplete, setIsChannelStepComplete] = useState(
+    () => persistedBootstrap?.isChannelStepComplete ?? false,
+  );
   const [errorMessage, setErrorMessage] = useState("");
   const [channelModeMessage, setChannelModeMessage] = useState("");
   const [, setChannelSubscribersOnly] = useState(false);
@@ -113,7 +133,9 @@ export const useKickGiveaway = (sessionId: string) => {
   const [displayName, setDisplayName] = useState("");
   const [showConfetti, setShowConfetti] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(
-    DEFAULT_SETTINGS.confirmTimeSeconds,
+    () =>
+      persistedBootstrap?.countdownSeconds ??
+      DEFAULT_SETTINGS.confirmTimeSeconds,
   );
   const [isCountdownActive, setIsCountdownActive] = useState(false);
   const [giveawayStarted, setGiveawayStarted] = useState(false);
@@ -215,18 +237,6 @@ export const useKickGiveaway = (sessionId: string) => {
       clearInterval(intervalId);
     };
   }, [isCountdownActive, pendingWinner, settings.confirmTimeSeconds]);
-
-  useLayoutEffect(() => {
-    const persisted = loadPersistedState();
-    if (persisted) {
-      setChannelName(persisted.channelName);
-      setSettings(persisted.settings);
-      setCountdownSeconds(persisted.settings.confirmTimeSeconds);
-      setIsChannelStepComplete(Boolean(persisted.channelName.trim()));
-    }
-
-    setIsPersistenceReady(true);
-  }, []);
 
   useEffect(() => {
     if (!isPersistenceReady || !sessionId) {
