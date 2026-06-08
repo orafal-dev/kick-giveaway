@@ -1,4 +1,5 @@
 import { Settings2Icon } from "lucide-react";
+import { OverlayLayoutPanel } from "@/components/giveaway/OverlayLayoutPanel";
 import {
   SettingsForm,
   type SettingsPanelProps,
@@ -11,10 +12,18 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import type { OverlayLayoutSettings } from "@/overlay/overlayLayout.types";
 
-type GiveawaySidebarProps = SettingsPanelProps;
+type GiveawaySidebarProps = SettingsPanelProps & {
+  overlayLayout: OverlayLayoutSettings;
+  onUpdateOverlayLayout: (partial: Partial<OverlayLayoutSettings>) => void;
+};
 
-export const GiveawaySidebar = (props: GiveawaySidebarProps) => {
+export const GiveawaySidebar = ({
+  overlayLayout,
+  onUpdateOverlayLayout,
+  ...props
+}: GiveawaySidebarProps) => {
   return (
     <Sidebar variant="inset" collapsible="offcanvas">
       <SidebarHeader>
@@ -33,6 +42,10 @@ export const GiveawaySidebar = (props: GiveawaySidebarProps) => {
 
       <SidebarContent>
         <SettingsForm {...props} showStartButton={false} />
+        <OverlayLayoutPanel
+          layout={overlayLayout}
+          onUpdateLayout={onUpdateOverlayLayout}
+        />
       </SidebarContent>
 
       <SidebarFooter className="gap-2">
