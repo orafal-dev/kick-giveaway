@@ -345,7 +345,7 @@ export function SidebarInput({
   return (
     <Input
       className={cn(
-        "h-10 [&>input]:h-10 w-full bg-background shadow-none",
+        "inline-flex h-9 min-h-9 w-full items-center border-border/80 bg-card shadow-none [&>input]:h-9 [&>input]:min-h-0 [&>input]:leading-9 [&>input]:py-0",
         className,
       )}
       data-sidebar="input"

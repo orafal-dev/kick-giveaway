@@ -45,11 +45,11 @@ export const WinnersPanel = ({
   );
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="flex h-full min-h-0 flex-col">
+      <CardHeader className="shrink-0">
         <CardTitle>Winners ({winners.length})</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
         <div className="rounded-xl border border-border bg-muted/40 p-6 text-center">
           <p className="mb-2 text-xs uppercase text-muted-foreground">
             {isDrawing ? "Drawing..." : "Current selection"}
@@ -90,7 +90,7 @@ export const WinnersPanel = ({
           </div>
         ) : null}
 
-        <ScrollArea className="h-72 rounded-md border border-border p-2">
+        <ScrollArea className="min-h-0 flex-1 rounded-md border border-border p-2">
           <ul className="space-y-2 text-sm">
             {winners.map((winner) => {
               const winnerMessages = getWinnerChatMessages(

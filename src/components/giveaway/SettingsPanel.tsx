@@ -1,26 +1,17 @@
-import { ChevronDownIcon } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { GiveawayActionButtons } from "@/components/giveaway/GiveawayActionButtons";
-import { IgnoredNicksField } from "@/components/giveaway/IgnoredNicksField";
-import {
-  Collapsible,
-  CollapsiblePanel,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Label } from "@/components/ui/label";
+import { DeckSelectTrigger } from "@/components/giveaway/DeckSelectTrigger";
+import { IgnoredNicksTextarea } from "@/components/giveaway/IgnoredNicksTextarea";
+import { SettingsInlineRow } from "@/components/giveaway/SettingsInlineRow";
+import { SettingsStackedRow } from "@/components/giveaway/SettingsStackedRow";
+import { SettingsSection } from "@/components/giveaway/SettingsSection";
 import {
   Select,
   SelectItem,
   SelectPopup,
-  SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarInput,
-} from "@/components/ui/sidebar";
-import { Slider } from "@/components/ui/slider";
+import { SidebarGroup, SidebarGroupContent, SidebarInput } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import type {
   AnimationMode,
@@ -28,14 +19,12 @@ import type {
 } from "@/giveaway/giveaway.types";
 import {
   ANIMATION_SELECT_ITEMS,
-  MAX_ANIMATION_DURATION_SECONDS,
-  MAX_CONFIRM_SECONDS,
-  MAX_MULTIPLIER,
+  CONFIRMATION_SELECT_ITEMS,
+  DURATION_SELECT_ITEMS,
   MAX_WINNERS_COUNT,
-  MIN_ANIMATION_DURATION_SECONDS,
-  MIN_CONFIRM_SECONDS,
-  MIN_MULTIPLIER,
   MIN_WINNERS_COUNT,
+  MULTIPLIER_SELECT_ITEMS,
+  SUB_DURATION_SELECT_ITEMS,
 } from "@/giveaway/giveaway.constants";
 
 export interface SettingsPanelProps {
@@ -56,6 +45,9 @@ const parseNumberInput = (value: string, fallback: number): number => {
   return Number.isNaN(parsed) ? fallback : parsed;
 };
 
+const deckInputClass =
+  "h-9 min-h-9 items-center border-border/70 bg-[#1c1c1f] shadow-none";
+
 export const SettingsForm = ({
   settings,
   giveawayStarted,
@@ -66,7 +58,6 @@ export const SettingsForm = ({
   onResetGiveaway,
   hasStoredParticipantsOrWinners,
   showStartButton = true,
-  usernameSuggestions = [],
 }: SettingsPanelProps) => {
   const handleAnimationChange = (value: string | null): void => {
     if (!value) {
@@ -76,265 +67,244 @@ export const SettingsForm = ({
     onUpdateSettings({ animationMode: value as AnimationMode });
   };
 
-  const handleAnimationDurationChange = (
-    value: number | readonly number[],
-  ): void => {
-    const raw = Array.isArray(value) ? value[0] : value;
-    if (typeof raw !== "number" || Number.isNaN(raw)) {
+  const handleConfirmationChange = (value: string | null): void => {
+    if (!value) {
       return;
     }
 
     onUpdateSettings({
-      animationDurationSeconds: Math.min(
-        MAX_ANIMATION_DURATION_SECONDS,
-        Math.max(MIN_ANIMATION_DURATION_SECONDS, Math.round(raw)),
-      ),
+      winnerConfirmationEnabled: value === "on",
     });
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <SidebarGroup>
-        <SidebarGroupContent className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="keyword-input">Keyword</Label>
-            <SidebarInput
-              id="keyword-input"
-              value={settings.keyword}
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                onUpdateSettings({ keyword: event.target.value })
-              }
-              placeholder="e.g. !giveaway"
-              aria-label="Giveaway keyword"
-            />
-          </div>
-
-          <IgnoredNicksField
-            ignoredNicks={settings.ignoredNicks}
-            suggestedUsernames={usernameSuggestions}
-            onIgnoredNicksChange={(ignoredNicks) =>
-              onUpdateSettings({ ignoredNicks })
-            }
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="winners-count-input">Winners</Label>
-            <SidebarInput
-              id="winners-count-input"
-              type="number"
-              min={MIN_WINNERS_COUNT}
-              max={MAX_WINNERS_COUNT}
-              value={settings.winnersCount}
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                onUpdateSettings({
-                  winnersCount: Math.min(
-                    MAX_WINNERS_COUNT,
-                    Math.max(
-                      MIN_WINNERS_COUNT,
-                      parseNumberInput(event.target.value, 1),
-                    ),
-                  ),
-                })
-              }
-              aria-label="Number of winners"
-            />
-          </div>
-        </SidebarGroupContent>
-      </SidebarGroup>
-
-      <SidebarGroup>
-        <SidebarGroupContent>
-          <Collapsible>
-            <CollapsibleTrigger className="inline-flex w-full items-center gap-2 font-medium text-sm data-panel-open:[&_svg]:rotate-180">
-              Eligibility rules
-              <ChevronDownIcon className="size-4" />
-            </CollapsibleTrigger>
-            <CollapsiblePanel>
-              <div className="flex flex-col gap-3 py-2">
-                <div className="space-y-2">
-                  <Label htmlFor="sub-duration-input">
-                    Subscription Duration (months)
-                  </Label>
-                  <SidebarInput
-                    id="sub-duration-input"
-                    type="number"
-                    min={0}
-                    value={settings.subscriptionDurationMonths}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                      onUpdateSettings({
-                        subscriptionDurationMonths: Math.max(
-                          0,
-                          parseNumberInput(event.target.value, 0),
-                        ),
-                      })
-                    }
-                    aria-label="Minimum subscription duration in months"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="sub-multiplier-input">
-                    Subscriber Multiplier
-                  </Label>
-                  <SidebarInput
-                    id="sub-multiplier-input"
-                    type="number"
-                    min={MIN_MULTIPLIER}
-                    max={MAX_MULTIPLIER}
-                    value={settings.subscriberMultiplier}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                      onUpdateSettings({
-                        subscriberMultiplier: Math.min(
-                          MAX_MULTIPLIER,
-                          Math.max(
-                            MIN_MULTIPLIER,
-                            parseNumberInput(event.target.value, 1),
-                          ),
-                        ),
-                      })
-                    }
-                    aria-label="Subscriber entry multiplier"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="follow-duration-input">
-                    Follow Duration (days)
-                  </Label>
-                  <SidebarInput
-                    id="follow-duration-input"
-                    type="number"
-                    min={0}
-                    value={settings.followDurationDays}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                      onUpdateSettings({
-                        followDurationDays: Math.max(
-                          0,
-                          parseNumberInput(event.target.value, 0),
-                        ),
-                      })
-                    }
-                    aria-label="Minimum follow duration in days"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-sidebar-border p-3">
-                  <Label
-                    htmlFor="subscribers-only-switch"
-                    className="cursor-pointer text-sm"
-                  >
-                    Subscribers only
-                  </Label>
-                  <Switch
-                    id="subscribers-only-switch"
-                    checked={settings.subscribersOnly}
-                    onCheckedChange={(checked) =>
-                      onUpdateSettings({ subscribersOnly: checked === true })
-                    }
-                    aria-label="Allow subscribers only"
-                  />
-                </div>
-              </div>
-            </CollapsiblePanel>
-          </Collapsible>
-        </SidebarGroupContent>
-      </SidebarGroup>
-
-      <SidebarGroup>
-        <SidebarGroupContent className="space-y-3">
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-sidebar-border p-3">
-            <Label
-              htmlFor="winner-confirmation-switch"
-              className="cursor-pointer text-sm"
-            >
-              Winner confirmation
-            </Label>
-            <Switch
-              id="winner-confirmation-switch"
-              checked={settings.winnerConfirmationEnabled}
-              onCheckedChange={(checked) =>
-                onUpdateSettings({
-                  winnerConfirmationEnabled: checked === true,
-                })
-              }
-              aria-label="Require winner confirmation"
-            />
-          </div>
-
-          {settings.winnerConfirmationEnabled ? (
-            <div className="space-y-2">
-              <Label htmlFor="confirm-time-input">Confirm Time (s)</Label>
+    <div className="flex flex-col gap-6">
+      <SidebarGroup className="p-0">
+        <SidebarGroupContent className="flex flex-col gap-7">
+          <SettingsSection title="Entry">
+            <SettingsStackedRow label="Keyword" htmlFor="keyword-input">
               <SidebarInput
-                id="confirm-time-input"
+                id="keyword-input"
+                className={deckInputClass}
+                value={settings.keyword}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  onUpdateSettings({ keyword: event.target.value })
+                }
+                placeholder="!giveaway"
+                aria-label="Giveaway keyword"
+              />
+            </SettingsStackedRow>
+
+            <SettingsStackedRow
+              label="Ignored nicks"
+              htmlFor="ignored-nicks-textarea"
+              hint="One per line"
+            >
+              <IgnoredNicksTextarea
+                ignoredNicks={settings.ignoredNicks}
+                onIgnoredNicksChange={(ignoredNicks) =>
+                  onUpdateSettings({ ignoredNicks })
+                }
+              />
+            </SettingsStackedRow>
+          </SettingsSection>
+
+          <SettingsSection title="Eligibility">
+            <SettingsInlineRow label="Sub duration" htmlFor="sub-duration-select">
+              <Select
+                value={String(settings.subscriptionDurationMonths)}
+                onValueChange={(value) => {
+                  if (!value) {
+                    return;
+                  }
+
+                  onUpdateSettings({
+                    subscriptionDurationMonths: parseNumberInput(value, 0),
+                  });
+                }}
+                items={SUB_DURATION_SELECT_ITEMS}
+              >
+                <DeckSelectTrigger
+                  id="sub-duration-select"
+                  aria-label="Minimum subscription duration"
+                >
+                  <SelectValue />
+                </DeckSelectTrigger>
+                <SelectPopup>
+                  {SUB_DURATION_SELECT_ITEMS.map(({ label, value }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectPopup>
+              </Select>
+            </SettingsInlineRow>
+
+            <SettingsInlineRow
+              label="Sub multiplier"
+              htmlFor="sub-multiplier-select"
+            >
+              <Select
+                value={String(settings.subscriberMultiplier)}
+                onValueChange={(value) => {
+                  if (!value) {
+                    return;
+                  }
+
+                  onUpdateSettings({
+                    subscriberMultiplier: parseNumberInput(value, 1),
+                  });
+                }}
+                items={MULTIPLIER_SELECT_ITEMS}
+              >
+                <DeckSelectTrigger
+                  id="sub-multiplier-select"
+                  aria-label="Subscriber entry multiplier"
+                >
+                  <SelectValue />
+                </DeckSelectTrigger>
+                <SelectPopup>
+                  {MULTIPLIER_SELECT_ITEMS.map(({ label, value }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectPopup>
+              </Select>
+            </SettingsInlineRow>
+
+            <SettingsInlineRow label="Follow days" htmlFor="follow-duration-input">
+              <SidebarInput
+                id="follow-duration-input"
+                className={deckInputClass}
                 type="number"
-                min={MIN_CONFIRM_SECONDS}
-                max={MAX_CONFIRM_SECONDS}
-                value={settings.confirmTimeSeconds}
+                min={0}
+                value={settings.followDurationDays}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
                   onUpdateSettings({
-                    confirmTimeSeconds: Math.min(
-                      MAX_CONFIRM_SECONDS,
+                    followDurationDays: Math.max(
+                      0,
+                      parseNumberInput(event.target.value, 0),
+                    ),
+                  })
+                }
+                aria-label="Minimum follow duration in days"
+              />
+            </SettingsInlineRow>
+
+            <SettingsInlineRow label="Subscribers only" htmlFor="subscribers-only-switch">
+              <div className="flex justify-end">
+                <Switch
+                  id="subscribers-only-switch"
+                  className="data-checked:bg-kick"
+                  checked={settings.subscribersOnly}
+                  onCheckedChange={(checked) =>
+                    onUpdateSettings({ subscribersOnly: checked === true })
+                  }
+                  aria-label="Allow subscribers only"
+                />
+              </div>
+            </SettingsInlineRow>
+          </SettingsSection>
+
+          <SettingsSection title="Draw">
+            <SettingsInlineRow label="Winners count" htmlFor="winners-count-input">
+              <SidebarInput
+                id="winners-count-input"
+                className={deckInputClass}
+                type="number"
+                min={MIN_WINNERS_COUNT}
+                max={MAX_WINNERS_COUNT}
+                value={settings.winnersCount}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  onUpdateSettings({
+                    winnersCount: Math.min(
+                      MAX_WINNERS_COUNT,
                       Math.max(
-                        MIN_CONFIRM_SECONDS,
-                        parseNumberInput(
-                          event.target.value,
-                          MIN_CONFIRM_SECONDS,
-                        ),
+                        MIN_WINNERS_COUNT,
+                        parseNumberInput(event.target.value, 1),
                       ),
                     ),
                   })
                 }
-                aria-label="Winner confirmation time in seconds"
+                aria-label="Number of winners"
               />
-            </div>
-          ) : null}
+            </SettingsInlineRow>
 
-          <div className="space-y-2">
-            <Label htmlFor="animation-select">Animation</Label>
-            <Select
-              value={settings.animationMode}
-              onValueChange={handleAnimationChange}
-              items={ANIMATION_SELECT_ITEMS}
-            >
-              <SelectTrigger aria-label="Draw animation mode" className="h-10">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectPopup>
-                {ANIMATION_SELECT_ITEMS.map(({ label, value }) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </Select>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="animation-duration-slider">
-                Animation duration
-              </Label>
-              <span
-                className="text-sm tabular-nums text-muted-foreground"
-                aria-hidden="true"
+            <SettingsInlineRow label="Confirmation" htmlFor="confirmation-select">
+              <Select
+                value={settings.winnerConfirmationEnabled ? "on" : "off"}
+                onValueChange={handleConfirmationChange}
+                items={CONFIRMATION_SELECT_ITEMS}
               >
-                {settings.animationDurationSeconds}s
-              </span>
-            </div>
-            <Slider
-              id="animation-duration-slider"
-              min={MIN_ANIMATION_DURATION_SECONDS}
-              max={MAX_ANIMATION_DURATION_SECONDS}
-              step={1}
-              value={[settings.animationDurationSeconds]}
-              onValueChange={handleAnimationDurationChange}
-              aria-label={`Animation duration, ${settings.animationDurationSeconds} seconds`}
-            />
-            <p className="text-xs text-muted-foreground">
-              {MIN_ANIMATION_DURATION_SECONDS}s–{MAX_ANIMATION_DURATION_SECONDS}s
-              draw time. Wheel mode uses almost all of this for the spin.
-            </p>
-          </div>
+                <DeckSelectTrigger
+                  id="confirmation-select"
+                  aria-label="Winner confirmation mode"
+                >
+                  <SelectValue />
+                </DeckSelectTrigger>
+                <SelectPopup>
+                  {CONFIRMATION_SELECT_ITEMS.map(({ label, value }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectPopup>
+              </Select>
+            </SettingsInlineRow>
+
+            <SettingsInlineRow label="Animation" htmlFor="animation-select">
+              <Select
+                value={settings.animationMode}
+                onValueChange={handleAnimationChange}
+                items={ANIMATION_SELECT_ITEMS}
+              >
+                <DeckSelectTrigger
+                  id="animation-select"
+                  aria-label="Draw animation mode"
+                >
+                  <SelectValue />
+                </DeckSelectTrigger>
+                <SelectPopup>
+                  {ANIMATION_SELECT_ITEMS.map(({ label, value }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectPopup>
+              </Select>
+            </SettingsInlineRow>
+
+            <SettingsInlineRow label="Duration" htmlFor="duration-select">
+              <Select
+                value={String(settings.animationDurationSeconds)}
+                onValueChange={(value) => {
+                  if (!value) {
+                    return;
+                  }
+
+                  onUpdateSettings({
+                    animationDurationSeconds: parseNumberInput(value, 8),
+                  });
+                }}
+                items={DURATION_SELECT_ITEMS}
+              >
+                <DeckSelectTrigger
+                  id="duration-select"
+                  aria-label="Draw animation duration"
+                >
+                  <SelectValue />
+                </DeckSelectTrigger>
+                <SelectPopup>
+                  {DURATION_SELECT_ITEMS.map(({ label, value }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectPopup>
+              </Select>
+            </SettingsInlineRow>
+          </SettingsSection>
         </SidebarGroupContent>
       </SidebarGroup>
 
@@ -345,20 +315,13 @@ export const SettingsForm = ({
       ) : null}
 
       {showStartButton ? (
-        <div className="space-y-2">
-          <GiveawayActionButtons
-            giveawayStarted={giveawayStarted}
-            connectionStatus={connectionStatus}
-            hasStoredParticipantsOrWinners={hasStoredParticipantsOrWinners}
-            onStartGiveaway={onStartGiveaway}
-            onResetGiveaway={onResetGiveaway}
-          />
-          {!giveawayStarted ? (
-            <p className="text-xs text-muted-foreground">
-              Press &quot;Start&quot; to connect to the chat.
-            </p>
-          ) : null}
-        </div>
+        <GiveawayActionButtons
+          giveawayStarted={giveawayStarted}
+          connectionStatus={connectionStatus}
+          hasStoredParticipantsOrWinners={hasStoredParticipantsOrWinners}
+          onStartGiveaway={onStartGiveaway}
+          onResetGiveaway={onResetGiveaway}
+        />
       ) : null}
     </div>
   );

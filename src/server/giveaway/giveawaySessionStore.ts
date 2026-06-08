@@ -87,6 +87,12 @@ export const ensureSessionState = async (
 ): Promise<GiveawaySessionState> => {
   const existing = await getSessionState(sessionId);
   if (existing) {
+    const channelName = partial.channelName?.trim();
+    if (channelName && !existing.channelName.trim()) {
+      const updated = await updateSessionState(sessionId, { channelName });
+      return updated ?? existing;
+    }
+
     return existing;
   }
 

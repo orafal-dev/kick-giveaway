@@ -1,4 +1,5 @@
-import { MoreHorizontalIcon } from "lucide-react";
+import { LayoutTemplateIcon, MoreHorizontalIcon } from "lucide-react";
+import Link from "next/link";
 import { ObsOverlayActions } from "@/components/giveaway/ObsOverlayActions";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
@@ -39,6 +40,16 @@ export const ConnectionBar = ({
           </MenuItem>
         </MenuPopup>
       </Menu>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="gap-1.5"
+        render={<Link href="/overlay-settings" />}
+      >
+        <LayoutTemplateIcon className="size-3.5" aria-hidden="true" />
+        Overlay layout
+      </Button>
       {overlaySessionId && overlayLayout ? (
         <ObsOverlayActions
           sessionId={overlaySessionId}

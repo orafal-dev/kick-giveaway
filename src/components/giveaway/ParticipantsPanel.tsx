@@ -92,8 +92,8 @@ export const ParticipantsPanel = ({
   );
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
+    <Card className="flex h-full min-h-0 flex-col">
+      <CardHeader className="flex shrink-0 flex-row flex-wrap items-center justify-between gap-3">
         <CardTitle>Participants ({entrants.length})</CardTitle>
         <div className="flex flex-wrap gap-2">
           {drawWinnerBlockReason ? (
@@ -113,8 +113,8 @@ export const ParticipantsPanel = ({
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex h-[max(calc(100vh-300px),400px)] flex-col overflow-hidden rounded-md border border-border">
+      <CardContent className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border">
           <ScrollArea
             className="min-h-0 flex-1 p-2"
             scrollbarGutter

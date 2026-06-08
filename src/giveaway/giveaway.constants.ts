@@ -47,3 +47,32 @@ export const ANIMATION_SELECT_ITEMS = [
   { label: "Classic", value: "classic" },
   { label: "Scramble", value: "scramble" },
 ] as const;
+
+export const MULTIPLIER_SELECT_ITEMS = Array.from(
+  { length: MAX_MULTIPLIER - MIN_MULTIPLIER + 1 },
+  (_, index) => {
+    const value = MIN_MULTIPLIER + index;
+    return {
+      label: `${value}.0x`,
+      value: String(value),
+    };
+  },
+);
+
+export const SUB_DURATION_SELECT_ITEMS = [
+  { label: "Any", value: "0" },
+  { label: "1 month", value: "1" },
+  { label: "3 months", value: "3" },
+  { label: "6 months", value: "6" },
+  { label: "12 months", value: "12" },
+] as const;
+
+export const CONFIRMATION_SELECT_ITEMS = [
+  { label: "Off", value: "off" },
+  { label: "Chat countdown", value: "on" },
+] as const;
+
+export const DURATION_SELECT_ITEMS = [3, 5, 8, 10, 12, 15].map((seconds) => ({
+  label: `${seconds} sec`,
+  value: String(seconds),
+}));
