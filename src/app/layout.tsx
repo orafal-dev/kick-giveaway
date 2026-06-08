@@ -3,11 +3,8 @@ import { OpenPanelComponent } from "@openpanel/nextjs";
 import Script from "next/script";
 import { siteMetadata, siteViewport } from "@/app/metadata";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ToastProvider } from "@/components/ui/toast";
-import { VersionProvider } from "@/components/VersionProvider";
 import { openpanelConfig } from "@/config/openpanel";
 import { SITE_NAME, SITE_URL } from "@/config/site";
-import { getVersion } from "@/lib/version";
 import "./globals.css";
 
 export const metadata = siteMetadata;
@@ -86,13 +83,7 @@ const RootLayout = ({ children }: RootLayoutProps) => {
             trackScreenViews
           />
         ) : null}
-        <ThemeProvider>
-          <ToastProvider>
-            <VersionProvider initialVersion={getVersion(process.env)}>
-              {children}
-            </VersionProvider>
-          </ToastProvider>
-        </ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
         <Script
           id="structured-data"
           type="application/ld+json"
