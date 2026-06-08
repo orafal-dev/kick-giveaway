@@ -4,6 +4,7 @@ import { buildGiveawayStartedProperties } from "@/analytics/giveaway-events";
 import { openpanelConfig } from "@/config/openpanel";
 import { devMode } from "@/config/devMode";
 import { DEFAULT_SETTINGS } from "@/giveaway/giveaway.constants";
+import { getConfirmationCountdownSeconds } from "@/giveaway/confirmationCountdown.utils";
 import {
   clearPersistedState,
   loadPersistedState,
@@ -192,6 +193,28 @@ export const useKickGiveaway = (sessionId: string) => {
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
+
+  useEffect(() => {
+    if (!isCountdownActive || !pendingWinner) {
+      return;
+    }
+
+    const { startedAt } = pendingWinner;
+    const confirmTimeSeconds = settings.confirmTimeSeconds;
+
+    const tick = (): void => {
+      setCountdownSeconds(
+        getConfirmationCountdownSeconds(startedAt, confirmTimeSeconds),
+      );
+    };
+
+    tick();
+    const intervalId = setInterval(tick, 250);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isCountdownActive, pendingWinner, settings.confirmTimeSeconds]);
 
   useLayoutEffect(() => {
     const persisted = loadPersistedState();
