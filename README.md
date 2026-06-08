@@ -126,3 +126,7 @@ docker build -f Dockerfile.collector -t kickaway-collector .
 Redis: use Coolify's managed Redis service in production, or `docker compose -f docker-compose.dev.yml up -d redis` locally.
 
 The web image uses Next.js `output: "standalone"` and serves on port 3000.
+
+## License
+
+[MIT](./LICENSE) — use and modify freely; include the copyright notice and license text when you reuse this project.
