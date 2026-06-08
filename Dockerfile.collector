@@ -21,7 +21,5 @@ COPY src ./src
 USER collector
 
 # Worker process — no HTTP listener. Coolify: disable domain / health URL checks.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD kill -0 1 || exit 1
 
 CMD ["bun", "run", "src/collector/index.ts"]
