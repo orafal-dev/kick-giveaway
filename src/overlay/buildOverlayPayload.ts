@@ -6,6 +6,7 @@ import type {
 } from "@/giveaway/giveaway.types";
 import type { OverlayLayoutSettings } from "@/overlay/overlayLayout.types";
 import type { OverlaySyncPayload } from "@/overlay/overlay.types";
+import { isCurrentSelectionNoShow } from "@/giveaway/winnerDisplay.utils";
 
 export interface BuildOverlayPayloadInput {
   channelName: string;
@@ -40,11 +41,11 @@ export const buildOverlayPayload = ({
   winners,
   layout,
 }: BuildOverlayPayloadInput): OverlaySyncPayload => {
-  const latestWinner = winners.at(-1);
-  const latestWinnerNoShow =
-    latestWinner?.noShow === true &&
-    Boolean(displayName) &&
-    latestWinner.username.toLowerCase() === displayName.toLowerCase();
+  const latestWinnerNoShow = isCurrentSelectionNoShow(
+    displayName,
+    winners,
+    pendingWinner,
+  );
 
   return {
     updatedAt: Date.now(),

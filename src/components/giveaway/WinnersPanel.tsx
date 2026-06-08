@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getWinnerChatMessages } from "@/giveaway/winnerChatMessages";
+import { isCurrentSelectionNoShow } from "@/giveaway/winnerDisplay.utils";
 import type {
   PendingWinner,
   WinnerConfirmationMessage,
@@ -37,11 +38,11 @@ export const WinnersPanel = ({
   winnerConfirmationEnabled,
   onManualConfirm,
 }: WinnersPanelProps) => {
-  const latestWinner = winners.at(-1);
-  const isLatestNoShow =
-    latestWinner?.noShow === true &&
-    Boolean(displayName) &&
-    latestWinner.username.toLowerCase() === displayName.toLowerCase();
+  const isLatestNoShow = isCurrentSelectionNoShow(
+    displayName,
+    winners,
+    pendingWinner,
+  );
 
   return (
     <Card>
