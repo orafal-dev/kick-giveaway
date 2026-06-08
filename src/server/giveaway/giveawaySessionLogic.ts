@@ -185,8 +185,8 @@ export const confirmWinnerInState = (
     (winner) => normalizeValue(winner.username) === normalizeValue(username),
   );
 
-  let nextWinners = state.winners;
-  let nextPhase = state.phase;
+  let nextWinners: typeof state.winners;
+  let nextPhase: typeof state.phase;
 
   if (existingIndex !== -1) {
     const existing = state.winners[existingIndex]!;
