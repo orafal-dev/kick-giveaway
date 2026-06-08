@@ -114,7 +114,7 @@ export const IOSPicker = <T,>({
   return (
     <div
       className={cn(
-        "relative mx-auto w-full max-w-xs select-none overflow-hidden rounded-xl border border-border bg-card shadow-lg",
+        "relative mx-auto w-80 max-w-full shrink-0 select-none overflow-hidden rounded-xl border border-border bg-card shadow-lg",
         className,
       )}
       style={{
