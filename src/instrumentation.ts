@@ -3,6 +3,9 @@ export const register = async (): Promise<void> => {
     return;
   }
 
+  const { ensureAuthMigrations } = await import("@/server/db/runAuthMigration");
+  await ensureAuthMigrations();
+
   const { startEmbeddedCollector } = await import(
     "@/server/giveaway/embeddedCollector"
   );

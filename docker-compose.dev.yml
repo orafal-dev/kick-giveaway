@@ -1,6 +1,22 @@
 # Local development only — do not deploy on Coolify.
-# Production Redis: use Coolify's managed Redis service.
+# Production Postgres + Redis: use Coolify managed services.
 services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: kickaway
+      POSTGRES_PASSWORD: kickaway
+      POSTGRES_DB: kickaway
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kickaway -d kickaway"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   redis:
     image: redis:7-alpine
     ports:
@@ -10,4 +26,5 @@ services:
     command: ["redis-server", "--save", "60", "1", "--appendonly", "yes", "--dir", "/data"]
 
 volumes:
+  postgres-dev-data:
   redis-dev-data:
