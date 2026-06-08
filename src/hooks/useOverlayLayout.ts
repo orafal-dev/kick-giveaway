@@ -1,5 +1,4 @@
-import { useCallback, useLayoutEffect, useState } from "react";
-import { DEFAULT_OVERLAY_LAYOUT } from "@/overlay/overlayLayout.constants";
+import { useCallback, useState } from "react";
 import type { OverlayLayoutSettings } from "@/overlay/overlayLayout.types";
 import {
   loadStoredOverlayLayout,
@@ -7,15 +6,10 @@ import {
 } from "@/overlay/overlayLayout.utils";
 
 export const useOverlayLayout = () => {
-  const [layout, setLayout] = useState<OverlayLayoutSettings>({
-    ...DEFAULT_OVERLAY_LAYOUT,
-  });
-  const [isReady, setIsReady] = useState(false);
-
-  useLayoutEffect(() => {
-    setLayout(loadStoredOverlayLayout());
-    setIsReady(true);
-  }, []);
+  const [layout, setLayout] = useState<OverlayLayoutSettings>(
+    loadStoredOverlayLayout,
+  );
+  const [isReady] = useState(true);
 
   const updateLayout = useCallback(
     (partial: Partial<OverlayLayoutSettings>): void => {
