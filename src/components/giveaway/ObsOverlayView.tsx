@@ -225,6 +225,10 @@ export const ObsOverlayView = ({
               isActive
               onDisplayChange={setLocalDisplayName}
               onComplete={handleAnimationComplete}
+              className={cn(
+                "pointer-events-none",
+                transparent && "bg-card/90 backdrop-blur-md",
+              )}
             />
           ) : (
             <div

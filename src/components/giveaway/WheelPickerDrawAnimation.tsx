@@ -15,6 +15,7 @@ interface WheelPickerDrawAnimationProps {
   isActive: boolean;
   onDisplayChange: (username: string) => void;
   onComplete: (winner: Entrant) => void;
+  className?: string;
 }
 
 const WHEEL_ITEM_HEIGHT_PX = 50;
@@ -27,6 +28,7 @@ export const WheelPickerDrawAnimation = ({
   isActive,
   onDisplayChange,
   onComplete,
+  className,
 }: WheelPickerDrawAnimationProps) => {
   const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timings = useMemo(
@@ -122,7 +124,7 @@ export const WheelPickerDrawAnimation = ({
       loops={loops}
       onActiveIndexChange={handleActiveIndexChange}
       onSettled={handleSettled}
-      className="pointer-events-none"
+      className={className ?? "pointer-events-none"}
     />
   );
 };
