@@ -158,7 +158,14 @@ export const useKickGiveaway = (sessionId: string) => {
       }
 
       latestUpdatedAtRef.current = state.updatedAt;
-      applySessionState(stateSetters, state);
+
+      const localChannelName = channelNameRef.current.trim();
+      const mergedState =
+        state.channelName.trim() || !localChannelName
+          ? state
+          : { ...state, channelName: localChannelName };
+
+      applySessionState(stateSetters, mergedState);
     },
     [stateSetters],
   );
@@ -355,10 +362,11 @@ export const useKickGiveaway = (sessionId: string) => {
 
     try {
       const channelInfo = await fetchKickChannelInfo(channelLabel);
-      await patchGiveawaySession(
+      const { state } = await patchGiveawaySession(
         sessionId,
         toChannelSessionPatch(channelNameRef.current, channelInfo),
       );
+      applyServerState(state);
       return true;
     } catch (error) {
       setErrorMessage(
@@ -368,7 +376,7 @@ export const useKickGiveaway = (sessionId: string) => {
       );
       return false;
     }
-  }, [channelLabel, serverUnavailable, sessionId]);
+  }, [applyServerState, channelLabel, serverUnavailable, sessionId]);
 
   const runAction = useCallback(
     async (

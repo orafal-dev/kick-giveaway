@@ -1,5 +1,3 @@
-import { Settings2Icon } from "lucide-react";
-import { OverlayLayoutPanel } from "@/components/giveaway/OverlayLayoutPanel";
 import {
   SettingsForm,
   type SettingsPanelProps,
@@ -9,46 +7,21 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import type { OverlayLayoutSettings } from "@/overlay/overlayLayout.types";
 
-type GiveawaySidebarProps = SettingsPanelProps & {
-  overlayLayout: OverlayLayoutSettings;
-  onUpdateOverlayLayout: (partial: Partial<OverlayLayoutSettings>) => void;
-};
-
-export const GiveawaySidebar = ({
-  overlayLayout,
-  onUpdateOverlayLayout,
-  ...props
-}: GiveawaySidebarProps) => {
+export const GiveawaySidebar = (props: SettingsPanelProps) => {
   return (
-    <Sidebar variant="inset" collapsible="offcanvas">
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-1 py-0.5">
-          <Settings2Icon
-            className="size-4 shrink-0 text-sidebar-foreground"
-            aria-hidden
-          />
-          <div className="min-w-0">
-            <p className="truncate font-semibold text-sidebar-foreground">
-              Settings
-            </p>
-          </div>
-        </div>
-      </SidebarHeader>
-
-      <SidebarContent>
+    <Sidebar
+      variant="sidebar"
+      collapsible="offcanvas"
+      className="border-r border-border/80"
+    >
+      <SidebarContent className="gap-0 px-4 py-5">
         <SettingsForm {...props} showStartButton={false} />
-        <OverlayLayoutPanel
-          layout={overlayLayout}
-          onUpdateLayout={onUpdateOverlayLayout}
-        />
       </SidebarContent>
 
-      <SidebarFooter className="gap-2">
+      <SidebarFooter className="gap-2 border-t border-border/80 px-4 py-4">
         <GiveawayActionButtons
           giveawayStarted={props.giveawayStarted}
           connectionStatus={props.connectionStatus}

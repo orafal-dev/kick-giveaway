@@ -126,9 +126,16 @@ export const handlePatchSession = async (
       return Response.json({ error: "Invalid settings." }, { status: 400 });
     }
 
-    const state = await syncSessionSettings(sessionId, parsedSettings);
+    let state = await syncSessionSettings(sessionId, parsedSettings);
     if (!state) {
       return Response.json({ error: "Session not found." }, { status: 404 });
+    }
+
+    if (typeof patch.channelName === "string" && patch.channelName.trim()) {
+      state =
+        (await updateSessionState(sessionId, {
+          channelName: patch.channelName.trim(),
+        })) ?? state;
     }
 
     return Response.json({ state }, { status: 200 });

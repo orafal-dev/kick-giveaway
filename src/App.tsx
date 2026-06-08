@@ -12,16 +12,12 @@ import { useTheme } from "next-themes";
 import { GiveawayAppShell } from "@/components/giveaway/GiveawayAppShell";
 import { ChannelLanding } from "@/components/giveaway/ChannelLanding";
 import { GiveawayConfetti } from "@/components/giveaway/GiveawayConfetti";
-import { ConnectionBar } from "@/components/giveaway/ConnectionBar";
+import { ConnectionStatusBar } from "@/components/giveaway/ConnectionStatusBar";
 import { DrawingOverlay } from "@/components/giveaway/DrawingOverlay";
 import { GiveawaySidebar } from "@/components/giveaway/GiveawaySidebar";
-import { ParticipantsPanel } from "@/components/giveaway/ParticipantsPanel";
-import { WinnersPanel } from "@/components/giveaway/WinnersPanel";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { LiveDrawSection } from "@/components/giveaway/LiveDrawSection";
+import { OverlayLayoutDrawer } from "@/components/giveaway/OverlayLayoutDrawer";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { VersionDisplay } from "@/components/VersionDisplay";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppSessionId } from "@/hooks/useAppSessionId";
@@ -50,6 +46,7 @@ function App() {
   const { finalizeDraw } = giveaway;
   const { resolvedTheme, setTheme } = useTheme();
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  const [overlayDrawerOpen, setOverlayDrawerOpen] = useState(false);
 
   const handleToggleTheme = useCallback((): void => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
@@ -70,6 +67,17 @@ function App() {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("overlay") === "1") {
+      setOverlayDrawerOpen(true);
+    }
   }, []);
 
   useHotkey("D", (event) => {
@@ -188,9 +196,10 @@ function App() {
   return (
     <SidebarProvider
       defaultOpen
+      className="min-h-svh"
       style={
         {
-          "--sidebar-width": "24rem",
+          "--sidebar-width": "22rem",
         } as CSSProperties
       }
     >
@@ -202,57 +211,41 @@ function App() {
         />
       ) : null}
 
-      <GiveawaySidebar
-        {...settingsSidebarProps}
-        overlayLayout={overlayLayout}
-        onUpdateOverlayLayout={updateOverlayLayout}
-      />
+      <div className="flex min-h-0 flex-1">
+        <GiveawaySidebar {...settingsSidebarProps} />
 
-      <SidebarInset>
-        <div
-          id="main-content"
-          className="flex min-h-svh flex-col gap-4 p-4 md:p-6"
-        >
-          <div className="flex items-start gap-3">
-            <SidebarTrigger
-              className="mt-0.5 shrink-0"
-              aria-label="Toggle settings sidebar"
+        <SidebarInset className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:m-0 md:rounded-none md:shadow-none">
+          <div
+            id="main-content"
+            className="flex min-h-0 w-full flex-1 flex-col gap-4 p-4 md:gap-5 md:p-5"
+          >
+            <ConnectionStatusBar
+              channelName={giveaway.channelName}
+              connectionStatus={giveaway.connectionStatus}
+              giveawayStarted={giveaway.giveawayStarted}
+              entrantCount={giveaway.entrants.length}
+              overlaySessionId={overlaySessionId}
+              overlayLayout={overlayLayout}
+              onChangeChannel={giveaway.handleChangeChannel}
+              onClearAllData={giveaway.handleClearAllData}
+              onOpenOverlayLayout={() => setOverlayDrawerOpen(true)}
             />
-            <header className="min-w-0 flex-1 space-y-1">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Kick giveaway
+
+            {giveaway.serverUnavailable ? (
+              <p className="text-sm text-destructive" role="alert">
+                Server-side giveaway collection is unavailable. Start Redis and
+                the collector process, then reload this page.
               </p>
-              <h1 className="truncate text-2xl font-bold tracking-tight md:text-3xl">
-                kickaway.win
-              </h1>
-            </header>
-          </div>
+            ) : null}
 
-          <ConnectionBar
-            channelName={giveaway.channelName}
-            overlaySessionId={overlaySessionId}
-            overlayLayout={overlayLayout}
-            devModeActive={giveaway.devModeEnabled}
-            devMockCount={giveaway.devMockEntrantCount}
-            onChangeChannel={giveaway.handleChangeChannel}
-            onClearAllData={giveaway.handleClearAllData}
-          />
+            {giveaway.errorMessage ? (
+              <p className="text-sm text-destructive" role="alert">
+                {giveaway.errorMessage}
+              </p>
+            ) : null}
 
-          {giveaway.serverUnavailable ? (
-            <p className="text-sm text-destructive" role="alert">
-              Server-side giveaway collection is unavailable. Start Redis and
-              the collector process, then reload this page.
-            </p>
-          ) : null}
-
-          {giveaway.errorMessage ? (
-            <p className="text-sm text-destructive" role="alert">
-              {giveaway.errorMessage}
-            </p>
-          ) : null}
-
-          <section className="grid flex-1 gap-4 lg:grid-cols-2">
-            <ParticipantsPanel
+            <LiveDrawSection
+              className="min-h-0 flex-1"
               entrants={giveaway.entrants}
               drawPoolCount={giveaway.drawPool.length}
               giveawayStarted={giveaway.giveawayStarted}
@@ -260,12 +253,8 @@ function App() {
               winnersTargetReached={giveaway.winnersTargetReached}
               winnersCount={giveaway.settings.winnersCount}
               onDrawWinner={giveaway.handleDrawWinner}
-            />
-
-            <WinnersPanel
               winners={giveaway.winners}
               displayName={giveaway.displayName}
-              isDrawing={giveaway.isDrawing}
               pendingWinner={giveaway.pendingWinner}
               pendingWinnerMessages={giveaway.pendingWinnerMessages}
               recentChatMessages={giveaway.lastMessages}
@@ -276,14 +265,21 @@ function App() {
               }
               onManualConfirm={giveaway.handleManualConfirm}
             />
-          </section>
 
-          <footer className="space-y-1 text-center text-xs text-muted-foreground">
-            <p>This app is not affiliated with Kick.com in any way.</p>
-            <VersionDisplay />
-          </footer>
-        </div>
-      </SidebarInset>
+            <footer className="shrink-0 pb-2 text-center text-xs text-muted-foreground">
+              <p>This app is not affiliated with Kick.com in any way.</p>
+              <VersionDisplay />
+            </footer>
+          </div>
+        </SidebarInset>
+      </div>
+
+      <OverlayLayoutDrawer
+        open={overlayDrawerOpen}
+        onOpenChange={setOverlayDrawerOpen}
+        layout={overlayLayout}
+        onUpdateLayout={updateOverlayLayout}
+      />
 
       {giveaway.isDrawing && giveaway.drawTarget ? (
         <DrawingOverlay

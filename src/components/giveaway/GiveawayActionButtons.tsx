@@ -1,3 +1,4 @@
+import { PlayIcon, RotateCcwIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface GiveawayActionButtonsProps {
@@ -15,36 +16,45 @@ export const GiveawayActionButtons = ({
   onStartGiveaway,
   onResetGiveaway,
 }: GiveawayActionButtonsProps) => {
-  const showClearStoredDataButton =
-    !giveawayStarted && hasStoredParticipantsOrWinners;
+  const handleReset = (): void => {
+    onResetGiveaway();
+  };
+
+  const showReset =
+    giveawayStarted || (!giveawayStarted && hasStoredParticipantsOrWinners);
 
   return (
-    <div className={showClearStoredDataButton ? "flex gap-3" : undefined}>
-      <Button
-        type="button"
-        className={showClearStoredDataButton ? "min-w-0 flex-1" : "w-full"}
-        size="2xl"
-        onClick={giveawayStarted ? onResetGiveaway : onStartGiveaway}
-        disabled={connectionStatus === "connecting"}
-        aria-label={
-          giveawayStarted
-            ? "Reset giveaway to before start"
-            : "Start giveaway and connect to chat"
-        }
-        variant={giveawayStarted ? "secondary" : "kick"}
-      >
-        {giveawayStarted ? "Reset" : "Start Giveaway"}
-      </Button>
-      {showClearStoredDataButton ? (
+    <div className="flex gap-2">
+      {showReset ? (
         <Button
           type="button"
+          className="min-w-0 flex-1 border-border/80 bg-[#1c1c1f]"
+          size="lg"
           variant="outline"
-          size="2xl"
-          onClick={onResetGiveaway}
+          onClick={handleReset}
           disabled={connectionStatus === "connecting"}
-          aria-label="Clear stored participants and winners"
+          aria-label={
+            giveawayStarted
+              ? "Reset giveaway to before start"
+              : "Clear stored participants and winners"
+          }
         >
+          <RotateCcwIcon aria-hidden="true" />
           Reset
+        </Button>
+      ) : null}
+      {!giveawayStarted ? (
+        <Button
+          type="button"
+          className={showReset ? "min-w-0 flex-[1.4]" : "w-full"}
+          size="lg"
+          variant="kick"
+          onClick={onStartGiveaway}
+          disabled={connectionStatus === "connecting"}
+          aria-label="Start giveaway and connect to chat"
+        >
+          <PlayIcon aria-hidden="true" />
+          Start
         </Button>
       ) : null}
     </div>
