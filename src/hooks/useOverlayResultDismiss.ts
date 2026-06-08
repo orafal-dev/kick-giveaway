@@ -11,13 +11,17 @@ export const useOverlayResultDismiss = (
   dismissSeconds: number,
   resetKey: string,
 ): UseOverlayResultDismissResult => {
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
   const [dismissed, setDismissed] = useState(false);
   const [fading, setFading] = useState(false);
 
-  useEffect(() => {
+  if (prevResetKey !== resetKey) {
+    setPrevResetKey(resetKey);
     setDismissed(false);
     setFading(false);
+  }
 
+  useEffect(() => {
     if (!active || dismissSeconds <= 0) {
       return;
     }
