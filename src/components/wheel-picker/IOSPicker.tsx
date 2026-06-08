@@ -30,7 +30,9 @@ export const IOSPicker = <T,>({
   const [scrollRound, setScrollRound] = useState(0);
   const onSettledRef = useRef(onSettled);
 
-  onSettledRef.current = onSettled;
+  useEffect(() => {
+    onSettledRef.current = onSettled;
+  }, [onSettled]);
 
   const virtualIndexes = useMemo(() => {
     const current = scrollRound;
