@@ -34,6 +34,7 @@ import {
   type WinnerChatCapture,
 } from "@/giveaway/winnerChatMessages";
 import { pickWeightedWinner, normalizeValue } from "@/services/drawUtils";
+import { upgradeNoShowWinner } from "@/giveaway/winnerDisplay.utils";
 import { fetchKickChannelInfo } from "@/services/kickApi";
 import {
   createMockKickMessages,
@@ -254,13 +255,44 @@ export const useKickGiveaway = () => {
       } = options;
 
       setWinners((previousWinners) => {
-        const alreadyRecorded = previousWinners.some(
+        const existingIndex = previousWinners.findIndex(
           (winner) =>
             normalizeValue(winner.username) === normalizeValue(username),
         );
 
-        if (alreadyRecorded) {
-          return previousWinners;
+        if (existingIndex !== -1) {
+          const existing = previousWinners[existingIndex]!;
+
+          if (!existing.noShow) {
+            return previousWinners;
+          }
+
+          if (noShow) {
+            return previousWinners;
+          }
+
+          const upgradedWinners = upgradeNoShowWinner(
+            previousWinners,
+            username,
+            userId,
+            confirmedAt,
+            confirmationMessages,
+          );
+
+          if (!upgradedWinners) {
+            return previousWinners;
+          }
+
+          const acceptedCount = upgradedWinners.filter(
+            (winner) => !winner.noShow,
+          ).length;
+          setPhase(
+            acceptedCount >= settingsRef.current.winnersCount
+              ? "completed"
+              : "collecting",
+          );
+
+          return upgradedWinners;
         }
 
         const nextWinners = [
