@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/sidebar";
 import { VersionDisplay } from "@/components/VersionDisplay";
 import { useKickGiveaway } from "@/hooks/useKickGiveaway";
+import { useOverlayBroadcast } from "@/hooks/useOverlayBroadcast";
+import { useOverlayLayout } from "@/hooks/useOverlayLayout";
 
 const isEditableElement = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {
@@ -40,6 +42,8 @@ const isEditableElement = (target: EventTarget | null): boolean => {
 
 function App() {
   const giveaway = useKickGiveaway();
+  const { layout: overlayLayout, updateLayout: updateOverlayLayout } =
+    useOverlayLayout();
   const { finalizeDraw } = giveaway;
   const { resolvedTheme, setTheme } = useTheme();
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -80,6 +84,23 @@ function App() {
     },
     [finalizeDraw],
   );
+
+  const overlaySessionId = useOverlayBroadcast({
+    channelName: giveaway.channelName,
+    giveawayStarted: giveaway.giveawayStarted,
+    settings: giveaway.settings,
+    isDrawing: giveaway.isDrawing,
+    drawTarget: giveaway.drawTarget,
+    drawPool: giveaway.drawPool,
+    displayName: giveaway.displayName,
+    pendingWinner: giveaway.pendingWinner,
+    countdownSeconds: giveaway.countdownSeconds,
+    isCountdownActive: giveaway.isCountdownActive,
+    showConfetti: giveaway.showConfetti,
+    drawCount: giveaway.drawCount,
+    winners: giveaway.winners,
+    layout: overlayLayout,
+  });
 
   const usernameSuggestions = useMemo(() => {
     const names = new Set<string>();
@@ -161,7 +182,11 @@ function App() {
         />
       ) : null}
 
-      <GiveawaySidebar {...settingsSidebarProps} />
+      <GiveawaySidebar
+        {...settingsSidebarProps}
+        overlayLayout={overlayLayout}
+        onUpdateOverlayLayout={updateOverlayLayout}
+      />
 
       <SidebarInset>
         <div
@@ -185,6 +210,8 @@ function App() {
 
           <ConnectionBar
             channelName={giveaway.channelName}
+            overlaySessionId={overlaySessionId}
+            overlayLayout={overlayLayout}
             devModeActive={giveaway.devModeEnabled}
             devMockCount={giveaway.devMockEntrantCount}
             onChangeChannel={giveaway.handleChangeChannel}
