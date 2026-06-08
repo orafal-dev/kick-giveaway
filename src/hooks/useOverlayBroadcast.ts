@@ -3,7 +3,6 @@ import {
   buildOverlayPayload,
   type BuildOverlayPayloadInput,
 } from "@/overlay/buildOverlayPayload";
-import { getOrCreateOverlaySessionId } from "@/overlay/overlaySession";
 import {
   publishOverlayStateLocal,
   publishOverlayStateRemote,
@@ -12,40 +11,44 @@ import {
 
 const REMOTE_PUBLISH_DEBOUNCE_MS = 500;
 
-export const useOverlayBroadcast = (input: BuildOverlayPayloadInput): string => {
-  const sessionId = useMemo(() => getOrCreateOverlaySessionId(), []);
+type UseOverlayBroadcastInput = BuildOverlayPayloadInput & {
+  sessionId: string;
+};
+
+export const useOverlayBroadcast = (input: UseOverlayBroadcastInput): string => {
+  const { sessionId, ...payloadInput } = input;
   const remotePublishTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
 
-  const latestWinner = input.winners.at(-1);
+  const latestWinner = payloadInput.winners.at(-1);
 
   const payload = useMemo(
-    () => buildOverlayPayload(input),
+    () => buildOverlayPayload(payloadInput),
     [
-      input.channelName,
-      input.giveawayStarted,
-      input.settings.animationMode,
-      input.settings.animationDurationSeconds,
-      input.settings.winnerConfirmationEnabled,
-      input.isDrawing,
-      input.drawTarget?.userId,
-      input.drawPool.length,
-      input.displayName,
-      input.pendingWinner?.userId,
-      input.pendingWinner?.startedAt,
-      input.countdownSeconds,
-      input.isCountdownActive,
-      input.showConfetti,
-      input.drawCount,
-      input.winners.length,
+      payloadInput.channelName,
+      payloadInput.giveawayStarted,
+      payloadInput.settings.animationMode,
+      payloadInput.settings.animationDurationSeconds,
+      payloadInput.settings.winnerConfirmationEnabled,
+      payloadInput.isDrawing,
+      payloadInput.drawTarget?.userId,
+      payloadInput.drawPool.length,
+      payloadInput.displayName,
+      payloadInput.pendingWinner?.userId,
+      payloadInput.pendingWinner?.startedAt,
+      payloadInput.countdownSeconds,
+      payloadInput.isCountdownActive,
+      payloadInput.showConfetti,
+      payloadInput.drawCount,
+      payloadInput.winners.length,
       latestWinner?.noShow,
       latestWinner?.username,
-      input.layout.wheelPosition,
-      input.layout.confirmationPosition,
-      input.layout.winnerPosition,
-      input.layout.noShowPosition,
-      input.layout.resultDismissSeconds,
+      payloadInput.layout.wheelPosition,
+      payloadInput.layout.confirmationPosition,
+      payloadInput.layout.winnerPosition,
+      payloadInput.layout.noShowPosition,
+      payloadInput.layout.resultDismissSeconds,
     ],
   );
 

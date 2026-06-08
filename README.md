@@ -46,11 +46,12 @@ REDIS_URL=redis://127.0.0.1:6379 npm run collector
 
 ### Coolify (production)
 
-Deploy **two applications from this repo** plus **Coolify's managed Redis** — no docker-compose:
+Deploy **two applications from this repo** plus **Coolify's managed Redis and Postgres** — no docker-compose:
 
 | Source | Service |
 | --- | --- |
-| Coolify Redis | Session store |
+| Coolify Redis | Giveaway session state and pub/sub |
+| Coolify Postgres | Better Auth (anonymous users) |
 | `Dockerfile.collector` | Kick chat collector worker |
 | `Dockerfile` | Next.js web app |
 
@@ -60,6 +61,9 @@ See [DEPLOY.md](./DEPLOY.md) for step-by-step Coolify setup.
 
 | Variable | Description |
 | --- | --- |
+| `DATABASE_URL` | Postgres connection URL for Better Auth |
+| `BETTER_AUTH_SECRET` | Better Auth encryption secret (min 32 chars) |
+| `BETTER_AUTH_URL` | Public app URL (e.g. `https://kickaway.win`) |
 | `REDIS_URL` | Redis connection URL for server-side giveaway sessions |
 | `COLLECTOR_MODE` | Local dev only — `embedded` runs the collector inside Next.js. Omit on Coolify when using `Dockerfile.collector`. |
 | `NEXT_PUBLIC_DEV_MODE` | When `true`, seeds mock chat entrants during the collecting phase |

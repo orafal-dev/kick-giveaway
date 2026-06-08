@@ -23,10 +23,11 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { VersionDisplay } from "@/components/VersionDisplay";
+import { Spinner } from "@/components/ui/spinner";
+import { useAppSessionId } from "@/hooks/useAppSessionId";
 import { useKickGiveaway } from "@/hooks/useKickGiveaway";
 import { useOverlayBroadcast } from "@/hooks/useOverlayBroadcast";
 import { useOverlayLayout } from "@/hooks/useOverlayLayout";
-import { getOrCreateAppSessionId } from "@/lib/appSession";
 
 const isEditableElement = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {
@@ -42,8 +43,8 @@ const isEditableElement = (target: EventTarget | null): boolean => {
 };
 
 function App() {
-  const sessionId = useMemo(() => getOrCreateAppSessionId(), []);
-  const giveaway = useKickGiveaway(sessionId);
+  const { sessionId, isReady, error: sessionError } = useAppSessionId();
+  const giveaway = useKickGiveaway(isReady ? sessionId : "");
   const { layout: overlayLayout, updateLayout: updateOverlayLayout } =
     useOverlayLayout();
   const { finalizeDraw } = giveaway;
@@ -88,6 +89,7 @@ function App() {
   );
 
   const overlaySessionId = useOverlayBroadcast({
+    sessionId: isReady ? sessionId : "",
     channelName: giveaway.channelName,
     giveawayStarted: giveaway.giveawayStarted,
     settings: giveaway.settings,
@@ -138,6 +140,22 @@ function App() {
     onResetGiveaway: giveaway.handleReset,
     usernameSuggestions,
   };
+
+  if (!isReady) {
+    return (
+      <main
+        id="main-content"
+        className="mx-auto flex min-h-svh w-full max-w-xl flex-col items-center justify-center gap-3 p-4 md:p-8"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <Spinner className="size-8" aria-hidden="true" />
+        <p className="text-muted-foreground text-sm">
+          {sessionError ?? "Starting your session…"}
+        </p>
+      </main>
+    );
+  }
 
   if (!giveaway.isPersistenceReady) {
     return <GiveawayAppShell />;
