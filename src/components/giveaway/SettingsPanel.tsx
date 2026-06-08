@@ -11,6 +11,14 @@ import {
   SelectPopup,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+  NumberFieldScrubArea,
+} from "@/components/ui/number-field";
 import { SidebarGroup, SidebarGroupContent, SidebarInput } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import type {
@@ -47,6 +55,15 @@ const parseNumberInput = (value: string, fallback: number): number => {
 
 const deckInputClass =
   "h-9 min-h-9 items-center border-border/70 bg-[#1c1c1f] shadow-none";
+
+const deckNumberFieldGroupClass =
+  "border-border/70 bg-[#1c1c1f] shadow-none";
+
+const settingsNumberFieldClass =
+  "grid w-full grid-cols-[minmax(6.75rem,36%)_1fr] items-center gap-x-3";
+
+const settingsScrubAreaClass =
+  "[&_[data-slot=label]]:cursor-ew-resize [&_[data-slot=label]]:font-normal [&_[data-slot=label]]:text-muted-foreground";
 
 export const SettingsForm = ({
   settings,
@@ -173,24 +190,28 @@ export const SettingsForm = ({
               </Select>
             </SettingsInlineRow>
 
-            <SettingsInlineRow label="Follow days" htmlFor="follow-duration-input">
-              <SidebarInput
-                id="follow-duration-input"
-                className={deckInputClass}
-                type="number"
-                min={0}
-                value={settings.followDurationDays}
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  onUpdateSettings({
-                    followDurationDays: Math.max(
-                      0,
-                      parseNumberInput(event.target.value, 0),
-                    ),
-                  })
-                }
-                aria-label="Minimum follow duration in days"
+            <NumberField
+              id="follow-duration-input"
+              size="sm"
+              className={settingsNumberFieldClass}
+              min={0}
+              value={settings.followDurationDays}
+              onValueChange={(value) =>
+                onUpdateSettings({
+                  followDurationDays: Math.max(0, value ?? 0),
+                })
+              }
+            >
+              <NumberFieldScrubArea
+                label="Follow days"
+                className={settingsScrubAreaClass}
               />
-            </SettingsInlineRow>
+              <NumberFieldGroup className={deckNumberFieldGroupClass}>
+                <NumberFieldDecrement />
+                <NumberFieldInput aria-label="Minimum follow duration in days" />
+                <NumberFieldIncrement />
+              </NumberFieldGroup>
+            </NumberField>
 
             <SettingsInlineRow label="Subscribers only" htmlFor="subscribers-only-switch">
               <div className="flex justify-end">
@@ -208,28 +229,32 @@ export const SettingsForm = ({
           </SettingsSection>
 
           <SettingsSection title="Draw">
-            <SettingsInlineRow label="Winners count" htmlFor="winners-count-input">
-              <SidebarInput
-                id="winners-count-input"
-                className={deckInputClass}
-                type="number"
-                min={MIN_WINNERS_COUNT}
-                max={MAX_WINNERS_COUNT}
-                value={settings.winnersCount}
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  onUpdateSettings({
-                    winnersCount: Math.min(
-                      MAX_WINNERS_COUNT,
-                      Math.max(
-                        MIN_WINNERS_COUNT,
-                        parseNumberInput(event.target.value, 1),
-                      ),
-                    ),
-                  })
-                }
-                aria-label="Number of winners"
+            <NumberField
+              id="winners-count-input"
+              size="sm"
+              className={settingsNumberFieldClass}
+              min={MIN_WINNERS_COUNT}
+              max={MAX_WINNERS_COUNT}
+              value={settings.winnersCount}
+              onValueChange={(value) =>
+                onUpdateSettings({
+                  winnersCount: Math.min(
+                    MAX_WINNERS_COUNT,
+                    Math.max(MIN_WINNERS_COUNT, value ?? MIN_WINNERS_COUNT),
+                  ),
+                })
+              }
+            >
+              <NumberFieldScrubArea
+                label="Winners count"
+                className={settingsScrubAreaClass}
               />
-            </SettingsInlineRow>
+              <NumberFieldGroup className={deckNumberFieldGroupClass}>
+                <NumberFieldDecrement />
+                <NumberFieldInput aria-label="Number of winners" />
+                <NumberFieldIncrement />
+              </NumberFieldGroup>
+            </NumberField>
 
             <SettingsInlineRow label="Confirmation" htmlFor="confirmation-select">
               <Select
