@@ -21,41 +21,15 @@ export const useOverlayBroadcast = (input: UseOverlayBroadcastInput): string => 
     null,
   );
 
-  const latestWinner = payloadInput.winners.at(-1);
-
   const payload = useMemo(
     () => buildOverlayPayload(payloadInput),
-    [
-      payloadInput.channelName,
-      payloadInput.giveawayStarted,
-      payloadInput.settings.animationMode,
-      payloadInput.settings.animationDurationSeconds,
-      payloadInput.settings.winnerConfirmationEnabled,
-      payloadInput.isDrawing,
-      payloadInput.drawTarget?.userId,
-      payloadInput.drawPool.length,
-      payloadInput.displayName,
-      payloadInput.pendingWinner?.userId,
-      payloadInput.pendingWinner?.startedAt,
-      payloadInput.countdownSeconds,
-      payloadInput.isCountdownActive,
-      payloadInput.showConfetti,
-      payloadInput.drawCount,
-      payloadInput.winners.length,
-      latestWinner?.noShow,
-      latestWinner?.username,
-      payloadInput.layout.wheelPosition,
-      payloadInput.layout.confirmationPosition,
-      payloadInput.layout.winnerPosition,
-      payloadInput.layout.noShowPosition,
-      payloadInput.layout.resultDismissSeconds,
-    ],
+    [payloadInput],
   );
 
   const payloadRef = useRef(payload);
-  payloadRef.current = payload;
 
   useEffect(() => {
+    payloadRef.current = payload;
     publishOverlayStateLocal(payload);
 
     if (remotePublishTimeoutRef.current) {
