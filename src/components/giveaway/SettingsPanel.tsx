@@ -57,7 +57,7 @@ const deckInputClass =
   "h-9 min-h-9 items-center border-border/70 bg-[#1c1c1f] shadow-none";
 
 const deckNumberFieldGroupClass =
-  "border-border/70 bg-[#1c1c1f] shadow-none";
+  "h-9 min-h-9 border-border/70 bg-[#1c1c1f] shadow-none [&_[data-slot=number-field-decrement]]:self-stretch [&_[data-slot=number-field-increment]]:self-stretch [&_[data-slot=number-field-input]]:h-9 [&_[data-slot=number-field-input]]:min-h-9 [&_[data-slot=number-field-input]]:leading-9 sm:[&_[data-slot=number-field-input]]:h-9 sm:[&_[data-slot=number-field-input]]:leading-9";
 
 const settingsNumberFieldClass =
   "grid w-full grid-cols-[minmax(6.75rem,36%)_1fr] items-center gap-x-3";
@@ -192,7 +192,6 @@ export const SettingsForm = ({
 
             <NumberField
               id="follow-duration-input"
-              size="sm"
               className={settingsNumberFieldClass}
               min={0}
               value={settings.followDurationDays}
@@ -231,7 +230,6 @@ export const SettingsForm = ({
           <SettingsSection title="Draw">
             <NumberField
               id="winners-count-input"
-              size="sm"
               className={settingsNumberFieldClass}
               min={MIN_WINNERS_COUNT}
               max={MAX_WINNERS_COUNT}
