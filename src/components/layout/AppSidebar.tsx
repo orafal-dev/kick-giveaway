@@ -5,8 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { GiveawaySettingsPanel } from "@/components/giveaway/GiveawaySettingsPanel";
 import { OverlaySettingsPanel } from "@/components/giveaway/OverlaySettingsPanel";
 import { AppNavUser } from "@/components/layout/AppNavUser";
+import { AppSidebarPanelSkeleton } from "@/components/layout/AppSidebarPanelSkeleton";
 import { useGiveawaySettingsSidebar } from "@/components/layout/GiveawaySettingsSidebarContext";
 import { useOverlaySettingsSidebar } from "@/components/layout/OverlaySettingsSidebarContext";
+import {
+  isOverlaySettingsRoute,
+  shouldUseWideAppSidebar,
+} from "@/config/layout";
 import { appNavigation, getActiveNavItem } from "@/config/navigation";
 import { SITE_NAME } from "@/config/site";
 import {
@@ -43,11 +48,12 @@ export const AppSidebar = (
   const { settings: overlaySettings } = useOverlaySettingsSidebar();
   const activeItem = getActiveNavItem(pathname);
 
-  const showGiveawaySettings =
-    pathname === "/" && giveawaySettings !== null;
-  const showOverlaySettings =
-    pathname === "/overlay-settings" && overlaySettings !== null;
-  const showWideSidebarPanel = showGiveawaySettings || showOverlaySettings;
+  const isOnGiveawayRoute = pathname === "/";
+  const isOnOverlayRoute = isOverlaySettingsRoute(pathname);
+  const showWideSidebarPanel = shouldUseWideAppSidebar(
+    pathname,
+    giveawaySettings !== null,
+  );
 
   const handleNavItemClick = (item: AppNavItem): void => {
     if (isMobile) {
@@ -138,10 +144,12 @@ export const AppSidebar = (
           !showWideSidebarPanel && "hidden md:flex",
         )}
       >
-        {showGiveawaySettings ? (
+        {isOnGiveawayRoute && giveawaySettings ? (
           <GiveawaySettingsPanel {...giveawaySettings} />
-        ) : showOverlaySettings ? (
+        ) : isOnOverlayRoute && overlaySettings ? (
           <OverlaySettingsPanel {...overlaySettings} />
+        ) : showWideSidebarPanel ? (
+          <AppSidebarPanelSkeleton />
         ) : (
           <>
             <SidebarHeader className="gap-3.5 border-b p-4">

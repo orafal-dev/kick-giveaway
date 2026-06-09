@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { ObsOverlayActions } from "@/components/giveaway/ObsOverlayActions";
 import { OverlayLayoutSettingsContent } from "@/components/giveaway/OverlayLayoutSettingsContent";
 import { useOverlaySettingsSidebar } from "@/components/layout/OverlaySettingsSidebarContext";
@@ -29,7 +29,7 @@ export const OverlayLayoutSettingsView = () => {
     [layout],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isReady) {
       setOverlaySettings(null);
       return;
@@ -37,12 +37,6 @@ export const OverlayLayoutSettingsView = () => {
 
     setOverlaySettings(overlaySidebarPropsRef.current);
   }, [isReady, overlaySidebarSnapshot, setOverlaySettings]);
-
-  useEffect(() => {
-    return () => {
-      setOverlaySettings(null);
-    };
-  }, [setOverlaySettings]);
 
   if (!isReady) {
     return (

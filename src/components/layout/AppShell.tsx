@@ -7,15 +7,13 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import {
   APP_NAV_SIDEBAR_WIDTH,
   APP_WIDE_SIDEBAR_WIDTH,
+  shouldUseWideAppSidebar,
 } from "@/config/layout";
 import {
   GiveawaySettingsSidebarProvider,
   useGiveawaySettingsSidebar,
 } from "@/components/layout/GiveawaySettingsSidebarContext";
-import {
-  OverlaySettingsSidebarProvider,
-  useOverlaySettingsSidebar,
-} from "@/components/layout/OverlaySettingsSidebarContext";
+import { OverlaySettingsSidebarProvider } from "@/components/layout/OverlaySettingsSidebarContext";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -30,12 +28,10 @@ type AppShellProps = {
 const AppShellLayout = ({ children }: AppShellProps) => {
   const pathname = usePathname();
   const { settings: giveawaySettings } = useGiveawaySettingsSidebar();
-  const { settings: overlaySettings } = useOverlaySettingsSidebar();
-  const showGiveawaySettings =
-    pathname === "/" && giveawaySettings !== null;
-  const showOverlaySettings =
-    pathname === "/overlay-settings" && overlaySettings !== null;
-  const useWideSidebar = showGiveawaySettings || showOverlaySettings;
+  const useWideSidebar = shouldUseWideAppSidebar(
+    pathname,
+    giveawaySettings !== null,
+  );
 
   return (
     <SidebarProvider

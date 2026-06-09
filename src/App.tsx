@@ -172,6 +172,10 @@ function App() {
   ]);
 
   useEffect(() => {
+    if (!giveaway.isPersistenceReady) {
+      return;
+    }
+
     if (!giveaway.isChannelStepComplete) {
       setGiveawaySettings(null);
       return;
@@ -179,6 +183,7 @@ function App() {
 
     setGiveawaySettings(settingsSidebarPropsRef.current);
   }, [
+    giveaway.isPersistenceReady,
     giveaway.isChannelStepComplete,
     setGiveawaySettings,
     settingsSidebarSnapshot,
