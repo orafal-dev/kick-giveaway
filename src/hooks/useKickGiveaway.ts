@@ -37,6 +37,9 @@ import {
 const HEARTBEAT_INTERVAL_MS = 30_000;
 const SETTINGS_SYNC_DEBOUNCE_MS = 400;
 
+const serializeSettings = (value: GiveawaySettings): string =>
+  JSON.stringify(value);
+
 const applySessionState = (
   setters: {
     setChannelName: (value: string) => void;
@@ -141,6 +144,10 @@ export const useKickGiveaway = (sessionId: string) => {
   const [giveawayStarted, setGiveawayStarted] = useState(false);
 
   const latestUpdatedAtRef = useRef(0);
+  const syncedChannelNameRef = useRef("");
+  const syncedSettingsSnapshotRef = useRef(
+    serializeSettings(persistedBootstrap?.settings ?? DEFAULT_SETTINGS),
+  );
   const settingsSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -189,6 +196,8 @@ export const useKickGiveaway = (sessionId: string) => {
           : { ...state, channelName: localChannelName };
 
       applySessionState(stateSetters, mergedState);
+      syncedChannelNameRef.current = mergedState.channelName;
+      syncedSettingsSnapshotRef.current = serializeSettings(mergedState.settings);
     },
     [stateSetters],
   );
@@ -350,15 +359,41 @@ export const useKickGiveaway = (sessionId: string) => {
       return;
     }
 
+    const nextChannelName = channelNameRef.current;
+    const nextSettingsSnapshot = serializeSettings(settingsRef.current);
+
+    if (
+      nextChannelName === syncedChannelNameRef.current &&
+      nextSettingsSnapshot === syncedSettingsSnapshotRef.current
+    ) {
+      return;
+    }
+
     if (settingsSyncTimeoutRef.current) {
       clearTimeout(settingsSyncTimeoutRef.current);
     }
 
     settingsSyncTimeoutRef.current = setTimeout(() => {
+      const channelNameToSync = channelNameRef.current;
+      const settingsToSync = settingsRef.current;
+      const settingsSnapshot = serializeSettings(settingsToSync);
+
+      if (
+        channelNameToSync === syncedChannelNameRef.current &&
+        settingsSnapshot === syncedSettingsSnapshotRef.current
+      ) {
+        return;
+      }
+
       void patchGiveawaySession(sessionId, {
-        channelName: channelNameRef.current,
-        settings: settingsRef.current,
-      }).catch(() => {});
+        channelName: channelNameToSync,
+        settings: settingsToSync,
+      })
+        .then(() => {
+          syncedChannelNameRef.current = channelNameToSync;
+          syncedSettingsSnapshotRef.current = settingsSnapshot;
+        })
+        .catch(() => {});
     }, SETTINGS_SYNC_DEBOUNCE_MS);
 
     return () => {
