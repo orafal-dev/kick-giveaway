@@ -106,6 +106,7 @@ function App() {
     showConfetti: giveaway.showConfetti,
     drawCount: giveaway.drawCount,
     winners: giveaway.winners,
+    entrants: giveaway.entrants,
     layout: overlayLayout,
   });
 

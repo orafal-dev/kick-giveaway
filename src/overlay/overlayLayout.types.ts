@@ -14,6 +14,7 @@ export interface OverlayLayoutSettings {
   confirmationPosition: OverlayAnchor;
   winnerPosition: OverlayAnchor;
   noShowPosition: OverlayAnchor;
+  participantsPosition: OverlayAnchor;
   /** Seconds before winner / no-show fade out. 0 = stay until next draw. */
   resultDismissSeconds: number;
 }

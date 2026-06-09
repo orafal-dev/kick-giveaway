@@ -11,6 +11,7 @@ import {
 import { DrawAnimation } from "@/components/giveaway/DrawAnimation";
 import { GiveawayConfetti } from "@/components/giveaway/GiveawayConfetti";
 import { OverlayAnchorSlot } from "@/components/giveaway/OverlayAnchorSlot";
+import { OverlayParticipantsList } from "@/components/giveaway/OverlayParticipantsList";
 import { WheelPickerDrawAnimation } from "@/components/giveaway/WheelPickerDrawAnimation";
 import type { Entrant } from "@/giveaway/giveaway.types";
 import { useOverlayResultDismiss } from "@/hooks/useOverlayResultDismiss";
@@ -38,7 +39,10 @@ export const ObsOverlayView = ({
   initialLayout = DEFAULT_OVERLAY_LAYOUT,
 }: ObsOverlayViewProps) => {
   const state = useOverlaySync(sessionId);
-  const layout = state?.layout ?? initialLayout;
+  const layout = useMemo(
+    () => ({ ...DEFAULT_OVERLAY_LAYOUT, ...(state?.layout ?? initialLayout) }),
+    [initialLayout, state?.layout],
+  );
 
   const [animatedDisplayName, setAnimatedDisplayName] = useState("");
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -173,12 +177,17 @@ export const ObsOverlayView = ({
     state?.showConfetti === true ||
     (showWinnerResult && !winnerDismiss.dismissed && !isNoShow);
 
+  const showParticipantsList =
+    state?.giveawayStarted === true &&
+    (state.recentParticipants?.length ?? 0) > 0;
+
   const hasVisibleContent =
     isDrawing ||
     showAwaitingConfirmation ||
     showConfetti ||
     (showWinnerResult && !winnerDismiss.dismissed) ||
-    (showNoShowResult && !noShowDismiss.dismissed);
+    (showNoShowResult && !noShowDismiss.dismissed) ||
+    showParticipantsList;
 
   const resultFadeClassName = cn(
     "transition-opacity duration-[600ms] ease-out",
@@ -365,6 +374,14 @@ export const ObsOverlayView = ({
               {visibleName}
             </p>
           </div>
+        </OverlayAnchorSlot>
+      ) : null}
+
+      {showParticipantsList ? (
+        <OverlayAnchorSlot position={layout.participantsPosition}>
+          <OverlayParticipantsList
+            participants={state?.recentParticipants ?? []}
+          />
         </OverlayAnchorSlot>
       ) : null}
     </div>

@@ -29,6 +29,7 @@ const POSITION_FIELDS: ReadonlyArray<{
     | "confirmationPosition"
     | "winnerPosition"
     | "noShowPosition"
+    | "participantsPosition"
   >;
   label: string;
   selectId: string;
@@ -48,6 +49,11 @@ const POSITION_FIELDS: ReadonlyArray<{
     key: "noShowPosition",
     label: "No show",
     selectId: "overlay-noshow-position",
+  },
+  {
+    key: "participantsPosition",
+    label: "Participants",
+    selectId: "overlay-participants-position",
   },
 ];
 

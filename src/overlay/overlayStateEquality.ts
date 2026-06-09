@@ -2,6 +2,21 @@ import type { OverlaySyncPayload } from "@/overlay/overlay.types";
 import type { OverlayLayoutSettings } from "@/overlay/overlayLayout.types";
 import { isOverlayLayoutEqual } from "@/overlay/overlayLayout.utils";
 
+const areRecentParticipantsEqual = (
+  left: OverlaySyncPayload["recentParticipants"],
+  right: OverlaySyncPayload["recentParticipants"],
+): boolean => {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every(
+    (participant, index) =>
+      participant.userId === right[index]?.userId &&
+      participant.username === right[index]?.username,
+  );
+};
+
 /** Skip React updates when polls only repeat the same overlay-visible state. */
 export const isOverlayStateEquivalent = (
   previous: OverlaySyncPayload | null,
@@ -27,6 +42,10 @@ export const isOverlayStateEquivalent = (
     previous.isCountdownActive === next.isCountdownActive &&
     previous.showConfetti === next.showConfetti &&
     previous.latestWinnerNoShow === next.latestWinnerNoShow &&
+    areRecentParticipantsEqual(
+      previous.recentParticipants,
+      next.recentParticipants,
+    ) &&
     isOverlayLayoutEqual(previous.layout, next.layout)
   );
 };
@@ -44,6 +63,7 @@ export const isOverlayLayoutSettings = (
     data.confirmationPosition,
     data.winnerPosition,
     data.noShowPosition,
+    data.participantsPosition,
   ];
 
   const isAnchor = (entry: unknown): boolean =>
@@ -61,7 +81,7 @@ export const isOverlayLayoutSettings = (
     ].includes(entry);
 
   return (
-    anchors.every(isAnchor) &&
+    anchors.every((entry) => entry === undefined || isAnchor(entry)) &&
     typeof data.resultDismissSeconds === "number"
   );
 };

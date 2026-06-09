@@ -78,6 +78,10 @@ export const parseOverlayLayoutSearchParams = (
     params.noshow,
     DEFAULT_OVERLAY_LAYOUT.noShowPosition,
   ),
+  participantsPosition: parseAnchorParam(
+    params.participants,
+    DEFAULT_OVERLAY_LAYOUT.participantsPosition,
+  ),
   resultDismissSeconds: parseDismissParam(params.dismiss),
 });
 
@@ -89,6 +93,7 @@ export const appendOverlayLayoutToSearchParams = (
   params.set("confirm", OVERLAY_ANCHOR_CODES[layout.confirmationPosition]);
   params.set("winner", OVERLAY_ANCHOR_CODES[layout.winnerPosition]);
   params.set("noshow", OVERLAY_ANCHOR_CODES[layout.noShowPosition]);
+  params.set("participants", OVERLAY_ANCHOR_CODES[layout.participantsPosition]);
   params.set("dismiss", String(layout.resultDismissSeconds));
 };
 
@@ -123,6 +128,7 @@ export const saveStoredOverlayLayout = (layout: OverlayLayoutSettings): void => 
       confirm: OVERLAY_ANCHOR_CODES[layout.confirmationPosition],
       winner: OVERLAY_ANCHOR_CODES[layout.winnerPosition],
       noshow: OVERLAY_ANCHOR_CODES[layout.noShowPosition],
+      participants: OVERLAY_ANCHOR_CODES[layout.participantsPosition],
       dismiss: String(layout.resultDismissSeconds),
     }),
   );
@@ -152,4 +158,5 @@ export const isOverlayLayoutEqual = (
   left.confirmationPosition === right.confirmationPosition &&
   left.winnerPosition === right.winnerPosition &&
   left.noShowPosition === right.noShowPosition &&
+  left.participantsPosition === right.participantsPosition &&
   left.resultDismissSeconds === right.resultDismissSeconds;

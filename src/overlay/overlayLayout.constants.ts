@@ -5,6 +5,7 @@ export const DEFAULT_OVERLAY_LAYOUT: OverlayLayoutSettings = {
   confirmationPosition: "top-center",
   winnerPosition: "center",
   noShowPosition: "center",
+  participantsPosition: "bottom-left",
   resultDismissSeconds: 8,
 };
 

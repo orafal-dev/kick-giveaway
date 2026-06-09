@@ -8,8 +8,8 @@ import {
 
 /** Waiting for the control panel to publish the first overlay state. */
 const WAITING_FOR_SYNC_POLL_MS = 2_000;
-/** Giveaway running but between draws — overlay is empty. */
-const WARM_POLL_INTERVAL_MS = 4_000;
+/** Giveaway running — participant list and between-draw states. */
+const WARM_POLL_INTERVAL_MS = 1_000;
 /** Drawing, confetti, or confirmation countdown. */
 const HOT_POLL_INTERVAL_MS = 1_000;
 /** Idle overlay with a synced session. */

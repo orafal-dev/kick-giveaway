@@ -22,6 +22,7 @@ export interface BuildOverlayPayloadInput {
   showConfetti: boolean;
   drawCount: number;
   winners: WinnerRecord[];
+  entrants: Entrant[];
   layout: OverlayLayoutSettings;
 }
 
@@ -39,6 +40,7 @@ export const buildOverlayPayload = ({
   showConfetti,
   drawCount,
   winners,
+  entrants,
   layout,
 }: BuildOverlayPayloadInput): OverlaySyncPayload => {
   const latestWinnerNoShow = isCurrentSelectionNoShow(
@@ -46,6 +48,11 @@ export const buildOverlayPayload = ({
     winners,
     pendingWinner,
   );
+
+  const recentParticipants = entrants.slice(-5).map((entrant) => ({
+    userId: entrant.userId,
+    username: entrant.username,
+  }));
 
   return {
     updatedAt: Date.now(),
@@ -64,6 +71,7 @@ export const buildOverlayPayload = ({
     isCountdownActive,
     showConfetti,
     latestWinnerNoShow,
+    recentParticipants,
     layout,
   };
 };

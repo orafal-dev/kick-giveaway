@@ -5,6 +5,11 @@ import type {
 } from "@/giveaway/giveaway.types";
 import type { OverlayLayoutSettings } from "@/overlay/overlayLayout.types";
 
+export interface OverlayRecentParticipant {
+  userId: string;
+  username: string;
+}
+
 export interface OverlaySyncPayload {
   updatedAt: number;
   drawCount: number;
@@ -22,6 +27,8 @@ export interface OverlaySyncPayload {
   isCountdownActive: boolean;
   showConfetti: boolean;
   latestWinnerNoShow: boolean;
+  /** Last entrants joined, oldest first (max 5). */
+  recentParticipants: OverlayRecentParticipant[];
   layout: OverlayLayoutSettings;
 }
 

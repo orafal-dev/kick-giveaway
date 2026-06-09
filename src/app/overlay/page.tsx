@@ -9,6 +9,7 @@ interface OverlayPageProps {
     confirm?: string;
     winner?: string;
     noshow?: string;
+    participants?: string;
     dismiss?: string;
   }>;
 }

@@ -23,7 +23,11 @@ import type {
 
 type OverlayElementKey = keyof Pick<
   OverlayLayoutSettings,
-  "wheelPosition" | "confirmationPosition" | "winnerPosition" | "noShowPosition"
+  | "wheelPosition"
+  | "confirmationPosition"
+  | "winnerPosition"
+  | "noShowPosition"
+  | "participantsPosition"
 >;
 
 const OVERLAY_ELEMENT_FIELDS: ReadonlyArray<{
@@ -34,6 +38,7 @@ const OVERLAY_ELEMENT_FIELDS: ReadonlyArray<{
   { key: "confirmationPosition", label: "Confirmation" },
   { key: "winnerPosition", label: "Winner" },
   { key: "noShowPosition", label: "No show" },
+  { key: "participantsPosition", label: "Participants" },
 ];
 
 const CORNER_ANCHORS = new Set<OverlayAnchor>([
