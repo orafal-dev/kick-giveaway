@@ -1,20 +1,6 @@
+import { OVERLAY_ANCHOR_PERCENT } from "@/overlay/overlayLayout.anchorPositions";
 import type { OverlayAnchor } from "@/overlay/overlayLayout.types";
 import { cn } from "@/lib/utils";
-
-const ANCHOR_SQUARE: Record<
-  OverlayAnchor,
-  { left: string; top: string }
-> = {
-  "top-left": { left: "16%", top: "20%" },
-  "top-center": { left: "50%", top: "20%" },
-  "top-right": { left: "84%", top: "20%" },
-  "center-left": { left: "16%", top: "50%" },
-  center: { left: "50%", top: "50%" },
-  "center-right": { left: "84%", top: "50%" },
-  "bottom-left": { left: "16%", top: "80%" },
-  "bottom-center": { left: "50%", top: "80%" },
-  "bottom-right": { left: "84%", top: "80%" },
-};
 
 export interface OverlayMonitorPreviewProps {
   anchor: OverlayAnchor;
@@ -27,7 +13,7 @@ export const OverlayMonitorPreview = ({
   selected = false,
   className,
 }: OverlayMonitorPreviewProps) => {
-  const square = ANCHOR_SQUARE[anchor];
+  const square = OVERLAY_ANCHOR_PERCENT[anchor];
 
   return (
     <div
@@ -59,7 +45,7 @@ export const OverlayMonitorPreview = ({
           "absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-[2px]",
           selected ? "bg-kick shadow-[0_0_10px] shadow-kick/60" : "bg-kick/80",
         )}
-        style={{ left: square.left, top: square.top }}
+        style={{ left: `${square.x}%`, top: `${square.y}%` }}
       />
     </div>
   );

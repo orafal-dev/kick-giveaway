@@ -16,7 +16,6 @@ import { ConnectionStatusBar } from "@/components/giveaway/ConnectionStatusBar";
 import { DrawingOverlay } from "@/components/giveaway/DrawingOverlay";
 import { GiveawaySidebar } from "@/components/giveaway/GiveawaySidebar";
 import { LiveDrawSection } from "@/components/giveaway/LiveDrawSection";
-import { OverlayLayoutDrawer } from "@/components/giveaway/OverlayLayoutDrawer";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { VersionDisplay } from "@/components/VersionDisplay";
 import { Spinner } from "@/components/ui/spinner";
@@ -41,19 +40,10 @@ const isEditableElement = (target: EventTarget | null): boolean => {
 function App() {
   const { sessionId, isReady, error: sessionError } = useAppSessionId();
   const giveaway = useKickGiveaway(isReady ? sessionId : "");
-  const { layout: overlayLayout, updateLayout: updateOverlayLayout } =
-    useOverlayLayout();
+  const { layout: overlayLayout } = useOverlayLayout();
   const { finalizeDraw } = giveaway;
   const { resolvedTheme, setTheme } = useTheme();
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-  const [overlayDrawerOpen, setOverlayDrawerOpen] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    return new URLSearchParams(window.location.search).get("overlay") === "1";
-  });
-
   const handleToggleTheme = useCallback((): void => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
   }, [resolvedTheme, setTheme]);
@@ -224,7 +214,6 @@ function App() {
               overlayLayout={overlayLayout}
               onChangeChannel={giveaway.handleChangeChannel}
               onClearAllData={giveaway.handleClearAllData}
-              onOpenOverlayLayout={() => setOverlayDrawerOpen(true)}
             />
 
             {giveaway.serverUnavailable ? (
@@ -269,13 +258,6 @@ function App() {
           </div>
         </SidebarInset>
       </div>
-
-      <OverlayLayoutDrawer
-        open={overlayDrawerOpen}
-        onOpenChange={setOverlayDrawerOpen}
-        layout={overlayLayout}
-        onUpdateLayout={updateOverlayLayout}
-      />
 
       {giveaway.isDrawing && giveaway.drawTarget ? (
         <DrawingOverlay

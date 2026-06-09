@@ -22,7 +22,6 @@ interface ConnectionStatusBarProps {
   overlayLayout?: OverlayLayoutSettings;
   onChangeChannel: () => void;
   onClearAllData: () => void;
-  onOpenOverlayLayout?: () => void;
 }
 
 const KickMark = () => (
@@ -43,7 +42,6 @@ export const ConnectionStatusBar = ({
   overlayLayout,
   onChangeChannel,
   onClearAllData,
-  onOpenOverlayLayout,
 }: ConnectionStatusBarProps) => {
   const chatConnected =
     giveawayStarted && connectionStatus === "connected";
@@ -108,30 +106,17 @@ export const ConnectionStatusBar = ({
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {onOpenOverlayLayout ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="gap-1.5 border-border/80 bg-transparent"
-            onClick={onOpenOverlayLayout}
-            aria-label="Open OBS overlay layout settings"
-          >
-            <LayoutTemplateIcon className="size-3.5" aria-hidden="true" />
-            OBS overlay
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="gap-1.5 border-border/80 bg-transparent"
-            render={<Link href="/overlay-settings" />}
-          >
-            <LayoutTemplateIcon className="size-3.5" aria-hidden="true" />
-            OBS overlay
-          </Button>
-        )}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="gap-1.5 border-border/80 bg-transparent"
+          render={<Link href="/overlay-settings" />}
+          aria-label="Open OBS overlay layout settings"
+        >
+          <LayoutTemplateIcon className="size-3.5" aria-hidden="true" />
+          OBS overlay
+        </Button>
         {overlaySessionId && overlayLayout ? (
           <ObsOverlayActions
             sessionId={overlaySessionId}
