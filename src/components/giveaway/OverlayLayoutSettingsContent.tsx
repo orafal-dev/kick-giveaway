@@ -1,4 +1,3 @@
-import { DismissSliderCard } from "@/components/giveaway/DismissSliderCard";
 import { OverlayLayoutCanvas } from "@/components/giveaway/OverlayLayoutCanvas";
 import type { OverlayLayoutSettings } from "@/overlay/overlayLayout.types";
 
@@ -12,14 +11,6 @@ export const OverlayLayoutSettingsContent = ({
   onUpdateLayout,
 }: OverlayLayoutSettingsContentProps) => {
   return (
-    <div className="flex flex-col gap-4">
-      <OverlayLayoutCanvas layout={layout} onUpdateLayout={onUpdateLayout} />
-      <DismissSliderCard
-        resultDismissSeconds={layout.resultDismissSeconds}
-        onDismissChange={(seconds) =>
-          onUpdateLayout({ resultDismissSeconds: seconds })
-        }
-      />
-    </div>
+    <OverlayLayoutCanvas layout={layout} onUpdateLayout={onUpdateLayout} />
   );
 };

@@ -1,13 +1,10 @@
 import {
   CheckCircle2Icon,
   ExternalLinkIcon,
-  LayoutTemplateIcon,
   MoreHorizontalIcon,
 } from "lucide-react";
-import Link from "next/link";
 import { ObsOverlayActions } from "@/components/giveaway/ObsOverlayActions";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import type { ConnectionStatus } from "@/giveaway/giveaway.types";
 import type { OverlayLayoutSettings } from "@/overlay/overlayLayout.types";
@@ -55,10 +52,6 @@ export const ConnectionStatusBar = ({
     <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-card px-4 py-3 md:flex-row md:items-center md:justify-between">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          <SidebarTrigger
-            className="md:hidden"
-            aria-label="Toggle giveaway settings"
-          />
           <KickMark />
           <p className="truncate text-sm">
             <span className="text-muted-foreground">Connected as </span>
@@ -106,17 +99,6 @@ export const ConnectionStatusBar = ({
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="gap-1.5 border-border/80 bg-transparent"
-          render={<Link href="/overlay-settings" />}
-          aria-label="Open OBS overlay layout settings"
-        >
-          <LayoutTemplateIcon className="size-3.5" aria-hidden="true" />
-          OBS overlay
-        </Button>
         {overlaySessionId && overlayLayout ? (
           <ObsOverlayActions
             sessionId={overlaySessionId}

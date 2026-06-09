@@ -350,5 +350,5 @@ export const SettingsForm = ({
   );
 };
 
-/** @deprecated Use SettingsForm inside GiveawaySidebar */
+/** @deprecated Use SettingsForm inside GiveawaySettingsPanel */
 export const SettingsPanel = SettingsForm;

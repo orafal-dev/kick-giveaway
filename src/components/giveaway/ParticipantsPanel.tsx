@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Entrant } from "@/giveaway/giveaway.types";
 
 interface DrawWinnerBlockContext {
@@ -104,9 +104,9 @@ export const ParticipantsPanel = ({
               >
                 {drawWinnerButton}
               </TooltipTrigger>
-              <TooltipPopup id="draw-winner-block-reason" side="bottom">
+              <TooltipContent id="draw-winner-block-reason" side="bottom">
                 {drawWinnerBlockReason}
-              </TooltipPopup>
+              </TooltipContent>
             </Tooltip>
           ) : (
             drawWinnerButton

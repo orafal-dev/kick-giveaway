@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { useTheme } from "next-themes";
 import { GiveawayAppShell } from "@/components/giveaway/GiveawayAppShell";
@@ -14,9 +8,8 @@ import { ChannelLanding } from "@/components/giveaway/ChannelLanding";
 import { GiveawayConfetti } from "@/components/giveaway/GiveawayConfetti";
 import { ConnectionStatusBar } from "@/components/giveaway/ConnectionStatusBar";
 import { DrawingOverlay } from "@/components/giveaway/DrawingOverlay";
-import { GiveawaySidebar } from "@/components/giveaway/GiveawaySidebar";
 import { LiveDrawSection } from "@/components/giveaway/LiveDrawSection";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useGiveawaySettingsSidebar } from "@/components/layout/GiveawaySettingsSidebarContext";
 import { VersionDisplay } from "@/components/VersionDisplay";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppSessionId } from "@/hooks/useAppSessionId";
@@ -39,6 +32,7 @@ const isEditableElement = (target: EventTarget | null): boolean => {
 
 function App() {
   const { sessionId, isReady, error: sessionError } = useAppSessionId();
+  const { setSettings: setGiveawaySettings } = useGiveawaySettingsSidebar();
   const giveaway = useKickGiveaway(isReady ? sessionId : "");
   const { layout: overlayLayout } = useOverlayLayout();
   const { finalizeDraw } = giveaway;
@@ -122,24 +116,79 @@ function App() {
     );
   }, [giveaway.lastMessages, giveaway.entrants]);
 
-  const settingsSidebarProps = {
-    settings: giveaway.settings,
-    giveawayStarted: giveaway.giveawayStarted,
-    connectionStatus: giveaway.connectionStatus,
-    channelModeMessage: giveaway.channelModeMessage,
-    hasStoredParticipantsOrWinners:
-      giveaway.entrants.length > 0 || giveaway.winners.length > 0,
-    onUpdateSettings: giveaway.updateSettings,
-    onStartGiveaway: giveaway.handleStartGiveaway,
-    onResetGiveaway: giveaway.handleReset,
+  const settingsSidebarProps = useMemo(
+    () => ({
+      settings: giveaway.settings,
+      giveawayStarted: giveaway.giveawayStarted,
+      connectionStatus: giveaway.connectionStatus,
+      channelModeMessage: giveaway.channelModeMessage,
+      hasStoredParticipantsOrWinners:
+        giveaway.entrants.length > 0 || giveaway.winners.length > 0,
+      onUpdateSettings: giveaway.updateSettings,
+      onStartGiveaway: giveaway.handleStartGiveaway,
+      onResetGiveaway: giveaway.handleReset,
+      usernameSuggestions,
+    }),
+    [
+      giveaway.settings,
+      giveaway.giveawayStarted,
+      giveaway.connectionStatus,
+      giveaway.channelModeMessage,
+      giveaway.entrants.length,
+      giveaway.winners.length,
+      giveaway.updateSettings,
+      giveaway.handleStartGiveaway,
+      giveaway.handleReset,
+      usernameSuggestions,
+    ],
+  );
+
+  const settingsSidebarPropsRef = useRef(settingsSidebarProps);
+  settingsSidebarPropsRef.current = settingsSidebarProps;
+
+  const settingsSidebarSnapshot = useMemo(() => {
+    if (!giveaway.isChannelStepComplete) {
+      return null;
+    }
+
+    return JSON.stringify({
+      settings: giveaway.settings,
+      giveawayStarted: giveaway.giveawayStarted,
+      connectionStatus: giveaway.connectionStatus,
+      channelModeMessage: giveaway.channelModeMessage,
+      hasStoredParticipantsOrWinners:
+        giveaway.entrants.length > 0 || giveaway.winners.length > 0,
+      usernameSuggestions,
+    });
+  }, [
+    giveaway.isChannelStepComplete,
+    giveaway.settings,
+    giveaway.giveawayStarted,
+    giveaway.connectionStatus,
+    giveaway.channelModeMessage,
+    giveaway.entrants.length,
+    giveaway.winners.length,
     usernameSuggestions,
-  };
+  ]);
+
+  useEffect(() => {
+    if (!giveaway.isChannelStepComplete) {
+      setGiveawaySettings(null);
+      return;
+    }
+
+    setGiveawaySettings(settingsSidebarPropsRef.current);
+  }, [
+    giveaway.isChannelStepComplete,
+    setGiveawaySettings,
+    settingsSidebarSnapshot,
+  ]);
 
   if (!isReady) {
     return (
       <main
         id="main-content"
-        className="mx-auto flex min-h-svh w-full max-w-xl flex-col items-center justify-center gap-3 p-4 md:p-8"
+        className="mx-auto flex min-h-full w-full max-w-xl flex-1 flex-col items-center justify-center gap-3 p-4 md:p-8"
         aria-busy="true"
         aria-live="polite"
       >
@@ -159,7 +208,7 @@ function App() {
     return (
       <main
         id="main-content"
-        className="mx-auto flex min-h-svh w-full max-w-xl flex-col justify-center p-4 md:p-8"
+        className="mx-auto flex min-h-full w-full max-w-xl flex-1 flex-col justify-center p-4 md:p-8"
       >
         {giveaway.showConfetti ? (
           <GiveawayConfetti
@@ -180,15 +229,7 @@ function App() {
   }
 
   return (
-    <SidebarProvider
-      defaultOpen
-      className="min-h-svh"
-      style={
-        {
-          "--sidebar-width": "22rem",
-        } as CSSProperties
-      }
-    >
+    <>
       {giveaway.showConfetti ? (
         <GiveawayConfetti
           width={windowSize.width}
@@ -197,66 +238,60 @@ function App() {
         />
       ) : null}
 
-      <div className="flex min-h-0 flex-1">
-        <GiveawaySidebar {...settingsSidebarProps} />
+      <div
+        id="main-content"
+        className="flex min-h-0 w-full flex-1 flex-col gap-4 p-4 md:gap-5 md:p-5"
+      >
+        <ConnectionStatusBar
+          channelName={giveaway.channelName}
+          connectionStatus={giveaway.connectionStatus}
+          giveawayStarted={giveaway.giveawayStarted}
+          entrantCount={giveaway.entrants.length}
+          overlaySessionId={overlaySessionId}
+          overlayLayout={overlayLayout}
+          onChangeChannel={giveaway.handleChangeChannel}
+          onClearAllData={giveaway.handleClearAllData}
+        />
 
-        <SidebarInset className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:m-0 md:rounded-none md:shadow-none">
-          <div
-            id="main-content"
-            className="flex min-h-0 w-full flex-1 flex-col gap-4 p-4 md:gap-5 md:p-5"
-          >
-            <ConnectionStatusBar
-              channelName={giveaway.channelName}
-              connectionStatus={giveaway.connectionStatus}
-              giveawayStarted={giveaway.giveawayStarted}
-              entrantCount={giveaway.entrants.length}
-              overlaySessionId={overlaySessionId}
-              overlayLayout={overlayLayout}
-              onChangeChannel={giveaway.handleChangeChannel}
-              onClearAllData={giveaway.handleClearAllData}
-            />
+        {giveaway.serverUnavailable ? (
+          <p className="text-sm text-destructive" role="alert">
+            Server-side giveaway collection is unavailable. Start Redis and the
+            collector process, then reload this page.
+          </p>
+        ) : null}
 
-            {giveaway.serverUnavailable ? (
-              <p className="text-sm text-destructive" role="alert">
-                Server-side giveaway collection is unavailable. Start Redis and
-                the collector process, then reload this page.
-              </p>
-            ) : null}
+        {giveaway.errorMessage ? (
+          <p className="text-sm text-destructive" role="alert">
+            {giveaway.errorMessage}
+          </p>
+        ) : null}
 
-            {giveaway.errorMessage ? (
-              <p className="text-sm text-destructive" role="alert">
-                {giveaway.errorMessage}
-              </p>
-            ) : null}
+        <LiveDrawSection
+          className="min-h-0 flex-1"
+          entrants={giveaway.entrants}
+          drawPoolCount={giveaway.drawPool.length}
+          giveawayStarted={giveaway.giveawayStarted}
+          isDrawing={giveaway.isDrawing}
+          winnersTargetReached={giveaway.winnersTargetReached}
+          winnersCount={giveaway.settings.winnersCount}
+          onDrawWinner={giveaway.handleDrawWinner}
+          winners={giveaway.winners}
+          displayName={giveaway.displayName}
+          pendingWinner={giveaway.pendingWinner}
+          pendingWinnerMessages={giveaway.pendingWinnerMessages}
+          recentChatMessages={giveaway.lastMessages}
+          countdownSeconds={giveaway.countdownSeconds}
+          isCountdownActive={giveaway.isCountdownActive}
+          winnerConfirmationEnabled={
+            giveaway.settings.winnerConfirmationEnabled
+          }
+          onManualConfirm={giveaway.handleManualConfirm}
+        />
 
-            <LiveDrawSection
-              className="min-h-0 flex-1"
-              entrants={giveaway.entrants}
-              drawPoolCount={giveaway.drawPool.length}
-              giveawayStarted={giveaway.giveawayStarted}
-              isDrawing={giveaway.isDrawing}
-              winnersTargetReached={giveaway.winnersTargetReached}
-              winnersCount={giveaway.settings.winnersCount}
-              onDrawWinner={giveaway.handleDrawWinner}
-              winners={giveaway.winners}
-              displayName={giveaway.displayName}
-              pendingWinner={giveaway.pendingWinner}
-              pendingWinnerMessages={giveaway.pendingWinnerMessages}
-              recentChatMessages={giveaway.lastMessages}
-              countdownSeconds={giveaway.countdownSeconds}
-              isCountdownActive={giveaway.isCountdownActive}
-              winnerConfirmationEnabled={
-                giveaway.settings.winnerConfirmationEnabled
-              }
-              onManualConfirm={giveaway.handleManualConfirm}
-            />
-
-            <footer className="shrink-0 pb-2 text-center text-xs text-muted-foreground">
-              <p>This app is not affiliated with Kick.com in any way.</p>
-              <VersionDisplay />
-            </footer>
-          </div>
-        </SidebarInset>
+        <footer className="shrink-0 pb-2 text-center text-xs text-muted-foreground">
+          <p>This app is not affiliated with Kick.com in any way.</p>
+          <VersionDisplay />
+        </footer>
       </div>
 
       {giveaway.isDrawing && giveaway.drawTarget ? (
@@ -272,7 +307,7 @@ function App() {
           key={giveaway.drawTarget.userId}
         />
       ) : null}
-    </SidebarProvider>
+    </>
   );
 }
 

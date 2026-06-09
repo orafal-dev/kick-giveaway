@@ -5,8 +5,7 @@ import {
   Sheet,
   SheetDescription,
   SheetHeader,
-  SheetPanel,
-  SheetPopup,
+  SheetContent,
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { OverlayLayoutSettings } from "@/overlay/overlayLayout.types";
@@ -26,7 +25,7 @@ export const OverlayLayoutDrawer = ({
 }: OverlayLayoutDrawerProps) => {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetPopup side="right" className="w-full max-w-xl border-border/80 bg-card">
+      <SheetContent side="right" className="w-full max-w-xl border-border/80 bg-card">
         <SheetHeader>
           <SheetTitle>OBS overlay layout</SheetTitle>
           <SheetDescription>
@@ -34,13 +33,13 @@ export const OverlayLayoutDrawer = ({
             results stay visible.
           </SheetDescription>
         </SheetHeader>
-        <SheetPanel className="space-y-4 pb-8">
+        <div className="space-y-4 overflow-y-auto pb-8">
           <OverlayLayoutSettingsContent
             layout={layout}
             onUpdateLayout={onUpdateLayout}
           />
-        </SheetPanel>
-      </SheetPopup>
+        </div>
+      </SheetContent>
     </Sheet>
   );
 };

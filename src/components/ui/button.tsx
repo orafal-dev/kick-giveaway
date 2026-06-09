@@ -54,3 +54,5 @@ export function Button({
     render,
   });
 }
+
+export { buttonVariants };

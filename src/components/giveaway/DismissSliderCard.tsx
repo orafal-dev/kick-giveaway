@@ -15,11 +15,13 @@ import { cn } from "@/lib/utils";
 export interface DismissSliderCardProps {
   resultDismissSeconds: number;
   onDismissChange: (seconds: number) => void;
+  variant?: "card" | "sidebar";
 }
 
 export const DismissSliderCard = ({
   resultDismissSeconds,
   onDismissChange,
+  variant = "card",
 }: DismissSliderCardProps) => {
   const snappedValue = snapDismissSeconds(resultDismissSeconds);
 
@@ -34,9 +36,15 @@ export const DismissSliderCard = ({
 
   const dismissLabel = snappedValue === 0 ? "Never" : `${snappedValue} sec`;
 
+  const isSidebarVariant = variant === "sidebar";
+
   return (
     <section
-      className="rounded-xl border border-border/80 bg-card p-5 md:p-6"
+      className={cn(
+        isSidebarVariant
+          ? "space-y-5"
+          : "rounded-xl border border-border/80 bg-card p-5 md:p-6",
+      )}
       aria-labelledby="dismiss-slider-heading"
     >
       <header className="mb-5 space-y-1">
@@ -51,7 +59,12 @@ export const DismissSliderCard = ({
         </p>
       </header>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div
+        className={cn(
+          "flex flex-col gap-4",
+          !isSidebarVariant && "sm:flex-row sm:items-center",
+        )}
+      >
         <div className="min-w-0 flex-1 space-y-3">
           <Label htmlFor="overlay-result-dismiss-slider" className="sr-only">
             Hide overlay after

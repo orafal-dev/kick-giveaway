@@ -3,7 +3,7 @@ export const GiveawayAppShell = () => {
   return (
     <main
       id="main-content"
-      className="min-h-svh bg-background"
+      className="min-h-full flex-1 bg-background"
       aria-busy="true"
       aria-label="Loading giveaway"
     />

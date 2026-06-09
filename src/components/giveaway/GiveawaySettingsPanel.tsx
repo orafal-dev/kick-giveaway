@@ -3,20 +3,11 @@ import {
   type SettingsPanelProps,
 } from "@/components/giveaway/SettingsPanel";
 import { GiveawayActionButtons } from "@/components/giveaway/GiveawayActionButtons";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarRail,
-} from "@/components/ui/sidebar";
+import { SidebarContent, SidebarFooter } from "@/components/ui/sidebar";
 
-export const GiveawaySidebar = (props: SettingsPanelProps) => {
+export const GiveawaySettingsPanel = (props: SettingsPanelProps) => {
   return (
-    <Sidebar
-      variant="sidebar"
-      collapsible="offcanvas"
-      className="border-r border-border/80"
-    >
+    <>
       <SidebarContent className="gap-0 px-4 py-5">
         <SettingsForm {...props} showStartButton={false} />
       </SidebarContent>
@@ -32,8 +23,6 @@ export const GiveawaySidebar = (props: SettingsPanelProps) => {
           onResetGiveaway={props.onResetGiveaway}
         />
       </SidebarFooter>
-
-      <SidebarRail />
-    </Sidebar>
+    </>
   );
 };
