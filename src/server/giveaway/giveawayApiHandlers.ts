@@ -1,13 +1,21 @@
 import { DEFAULT_SETTINGS } from "@/giveaway/giveaway.constants";
 import type { Entrant, GiveawaySettings } from "@/giveaway/giveaway.types";
+import type { KickChatMessage } from "@/App.types";
 import {
   clearConfettiInState,
   confirmWinnerInState,
   createInitialSessionState,
   finalizeDrawInState,
+  getWinnerChatCapture,
+  processChatMessage,
+  seedDevEntrants,
   startDrawInState,
+  tickCountdownInState,
 } from "@/server/giveaway/giveawaySessionLogic";
-import type { GiveawaySessionPatch } from "@/server/giveaway/giveawaySession.types";
+import type {
+  GiveawaySessionPatch,
+  GiveawaySessionState,
+} from "@/server/giveaway/giveawaySession.types";
 import {
   deleteSessionState,
   ensureSessionState,
@@ -15,9 +23,6 @@ import {
   mutateSessionState,
   recordSessionHeartbeat,
   replaceSessionState,
-  requestCollectorConnect,
-  requestCollectorStop,
-  requestCollectorSync,
   syncSessionSettings,
   updateSessionState,
 } from "@/server/giveaway/giveawaySessionStore";
@@ -26,7 +31,7 @@ import { isRedisConfigured } from "@/server/redis/redisConfig";
 export const requireRedis = (): Response | null => {
   if (!isRedisConfigured()) {
     return Response.json(
-      { error: "Server-side giveaway collection is not configured." },
+      { error: "Server-side giveaway session storage is not configured." },
       { status: 503 },
     );
   }
@@ -146,15 +151,6 @@ export const handlePatchSession = async (
     return Response.json({ error: "Session not found." }, { status: 404 });
   }
 
-  const shouldSyncCollector =
-    patch.chatroomId !== undefined ||
-    patch.channelId !== undefined ||
-    patch.connectionStatus === "connecting";
-
-  if (shouldSyncCollector) {
-    await requestCollectorSync(sessionId);
-  }
-
   return Response.json({ state }, { status: 200 });
 };
 
@@ -206,19 +202,27 @@ export const handleSessionAction = async (
       return handleUpdateDrawingDisplay(sessionId, body);
     case "stop":
       return handleStop(sessionId);
+    case "chat-message":
+      return handleChatMessage(sessionId, body);
+    case "ws-ready":
+      return handleWsReady(sessionId);
+    case "ws-disconnected":
+      return handleWsDisconnected(sessionId);
+    case "ws-error":
+      return handleWsError(sessionId, body);
+    case "tick-countdown":
+      return handleTickCountdown(sessionId);
     default:
       return Response.json({ error: "Unknown action." }, { status: 400 });
   }
 };
 
 const handleSync = async (sessionId: string): Promise<Response> => {
-  const existing = await getSessionState(sessionId);
-  if (!existing) {
+  const state = await getSessionState(sessionId);
+  if (!state) {
     return Response.json({ error: "Session not found." }, { status: 404 });
   }
 
-  await requestCollectorSync(sessionId);
-  const state = (await getSessionState(sessionId)) ?? existing;
   return Response.json({ state }, { status: 200 });
 };
 
@@ -249,7 +253,6 @@ const handleConnect = async (sessionId: string): Promise<Response> => {
     channelModeMessage: "",
   });
 
-  await requestCollectorConnect(sessionId);
   return Response.json({ state }, { status: 200 });
 };
 
@@ -276,6 +279,8 @@ const handleStart = async (sessionId: string): Promise<Response> => {
   let state = await updateSessionState(sessionId, {
     giveawayStarted: true,
     errorMessage: "",
+    connectionStatus:
+      existing.connectionStatus === "connected" ? "connected" : "connecting",
     phase:
       existing.connectionStatus === "connected" ? "collecting" : "connecting",
   });
@@ -285,15 +290,9 @@ const handleStart = async (sessionId: string): Promise<Response> => {
   }
 
   if (state.connectionStatus !== "connected") {
-    await requestCollectorConnect(sessionId);
     return Response.json({ state }, { status: 200 });
   }
 
-  await requestCollectorSync(sessionId);
-
-  const { seedDevEntrants } = await import(
-    "@/server/giveaway/giveawaySessionLogic"
-  );
   const { devMode } = await import("@/config/devMode");
 
   state = await replaceSessionState(
@@ -329,7 +328,6 @@ const handleReset = async (sessionId: string): Promise<Response> => {
 };
 
 const handleClear = async (sessionId: string): Promise<Response> => {
-  await requestCollectorStop(sessionId);
   await deleteSessionState(sessionId);
 
   const state = createInitialSessionState(sessionId);
@@ -339,8 +337,6 @@ const handleClear = async (sessionId: string): Promise<Response> => {
 };
 
 const handleChangeChannel = async (sessionId: string): Promise<Response> => {
-  await requestCollectorStop(sessionId);
-
   const state = await updateSessionState(sessionId, {
     giveawayStarted: false,
     phase: "idle",
@@ -404,8 +400,147 @@ const handleFinalizeDraw = async (
     return Response.json({ error: "Session not found." }, { status: 404 });
   }
 
-  if (state.isCountdownActive) {
-    await requestCollectorSync(sessionId);
+  return Response.json({ state }, { status: 200 });
+};
+
+const parseChatMessage = (body: unknown): KickChatMessage | null => {
+  if (
+    !body ||
+    typeof body !== "object" ||
+    !(body as { message?: unknown }).message ||
+    typeof (body as { message: KickChatMessage }).message !== "object"
+  ) {
+    return null;
+  }
+
+  const message = (body as { message: KickChatMessage }).message;
+  if (typeof message.username !== "string" || typeof message.message !== "string") {
+    return null;
+  }
+
+  return message;
+};
+
+const handleChatMessage = async (
+  sessionId: string,
+  body: unknown,
+): Promise<Response> => {
+  const chatMessage = parseChatMessage(body);
+  if (!chatMessage) {
+    return Response.json({ error: "Missing chat message." }, { status: 400 });
+  }
+
+  const state = await mutateSessionState(sessionId, (current) => {
+    const capture = getWinnerChatCapture(current);
+    return processChatMessage(current, chatMessage, capture);
+  });
+
+  if (!state) {
+    return Response.json({ error: "Session not found." }, { status: 404 });
+  }
+
+  return Response.json({ state }, { status: 200 });
+};
+
+const handleWsReady = async (sessionId: string): Promise<Response> => {
+  const existing = await getSessionState(sessionId);
+  if (!existing) {
+    return Response.json({ error: "Session not found." }, { status: 404 });
+  }
+
+  let nextState: GiveawaySessionState = {
+    ...existing,
+    connectionStatus: "connected",
+    errorMessage: "",
+  };
+
+  if (
+    nextState.giveawayStarted &&
+    nextState.phase !== "drawing" &&
+    nextState.phase !== "awaitingConfirmation" &&
+    nextState.phase !== "completed"
+  ) {
+    const { devMode } = await import("@/config/devMode");
+    nextState = {
+      ...seedDevEntrants(nextState, devMode.enabled, devMode.mockEntrantCount),
+      phase: "collecting",
+    };
+  } else if (nextState.phase === "connecting") {
+    nextState = {
+      ...nextState,
+      phase: "idle",
+    };
+  }
+
+  const state = await replaceSessionState(nextState);
+  return Response.json({ state }, { status: 200 });
+};
+
+const handleWsDisconnected = async (sessionId: string): Promise<Response> => {
+  const existing = await getSessionState(sessionId);
+  if (!existing) {
+    return Response.json({ error: "Session not found." }, { status: 404 });
+  }
+
+  if (existing.giveawayStarted && existing.chatroomId) {
+    const state = await replaceSessionState({
+      ...existing,
+      connectionStatus: "connecting",
+      phase: "connecting",
+      errorMessage: "",
+    });
+    return Response.json({ state }, { status: 200 });
+  }
+
+  const state = await replaceSessionState({
+    ...existing,
+    connectionStatus: "idle",
+    phase: existing.giveawayStarted ? "idle" : existing.phase,
+  });
+
+  return Response.json({ state }, { status: 200 });
+};
+
+const handleWsError = async (
+  sessionId: string,
+  body: unknown,
+): Promise<Response> => {
+  const existing = await getSessionState(sessionId);
+  if (!existing) {
+    return Response.json({ error: "Session not found." }, { status: 404 });
+  }
+
+  const message =
+    body &&
+    typeof body === "object" &&
+    typeof (body as { message?: unknown }).message === "string"
+      ? (body as { message: string }).message
+      : "WebSocket connection failed.";
+
+  if (existing.giveawayStarted && existing.chatroomId) {
+    const state = await replaceSessionState({
+      ...existing,
+      connectionStatus: "connecting",
+      phase: "connecting",
+      errorMessage: message,
+    });
+    return Response.json({ state }, { status: 200 });
+  }
+
+  const state = await replaceSessionState({
+    ...existing,
+    connectionStatus: "idle",
+    phase: "idle",
+    errorMessage: message,
+  });
+
+  return Response.json({ state }, { status: 200 });
+};
+
+const handleTickCountdown = async (sessionId: string): Promise<Response> => {
+  const state = await mutateSessionState(sessionId, tickCountdownInState);
+  if (!state) {
+    return Response.json({ error: "Session not found." }, { status: 404 });
   }
 
   return Response.json({ state }, { status: 200 });
@@ -465,8 +600,6 @@ const handleUpdateDrawingDisplay = async (
 };
 
 const handleStop = async (sessionId: string): Promise<Response> => {
-  await requestCollectorStop(sessionId);
-
   const state = await updateSessionState(sessionId, {
     giveawayStarted: false,
     phase: "idle",

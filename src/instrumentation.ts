@@ -5,10 +5,4 @@ export const register = async (): Promise<void> => {
 
   const { ensureAuthMigrations } = await import("@/server/db/runAuthMigration");
   await ensureAuthMigrations();
-
-  const { startEmbeddedCollector } = await import(
-    "@/server/giveaway/embeddedCollector"
-  );
-
-  await startEmbeddedCollector();
 };

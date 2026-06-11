@@ -55,41 +55,39 @@ Check a message locally:
 echo "feat: add wheel animation" | bunx commitlint
 ```
 
-`dev:stack` starts Redis in Docker and runs the embedded chat collector inside Next.js.
+`dev:stack` starts Redis and Postgres in Docker, then runs Next.js locally.
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Server-side chat collection
+### Chat collection
 
-Giveaway entrants are collected on the server so the control tab can be closed after starting a giveaway.
+Kick chat is collected in the **control panel browser tab** over WebSocket. Keep that tab open while a giveaway is running. Session state still syncs through Redis so overlays and other tabs can follow along via SSE/polling.
 
 | Component | Role |
 | --- | --- |
 | Redis | Stores giveaway session state and pub/sub events |
-| Collector | Maintains Kick WebSocket connections per active session |
-| Next.js API | Session CRUD, actions, and SSE updates to the browser |
+| Browser WebSocket | Connects to Kick chat for the active control tab |
+| Next.js API | Session CRUD, chat processing, and SSE updates |
 
 Local options:
 
 ```bash
-# Redis (docker-compose.dev.yml) + embedded collector in Next.js
+# Redis + Postgres (docker-compose.dev.yml) + Next.js
 npm run dev:stack
 
-# Or run Redis, Next.js, and a separate collector process
-docker compose -f docker-compose.dev.yml up -d redis
+# Or run dependencies and Next.js separately
+docker compose -f docker-compose.dev.yml up -d redis postgres
 REDIS_URL=redis://127.0.0.1:6379 npm run dev
-REDIS_URL=redis://127.0.0.1:6379 npm run collector
 ```
 
 ### Coolify (production)
 
-Deploy **two applications from this repo** plus **Coolify's managed Redis and Postgres** — no docker-compose:
+Deploy **one Next.js application** from this repo plus **Coolify's managed Redis and Postgres**:
 
 | Source | Service |
 | --- | --- |
 | Coolify Redis | Giveaway session state and pub/sub |
 | Coolify Postgres | Better Auth (anonymous users) |
-| `Dockerfile.collector` | Kick chat collector worker |
 | `Dockerfile` | Next.js web app |
 
 See [DEPLOY.md](./DEPLOY.md) for step-by-step Coolify setup.
@@ -101,8 +99,7 @@ See [DEPLOY.md](./DEPLOY.md) for step-by-step Coolify setup.
 | `DATABASE_URL` | Postgres connection URL for Better Auth |
 | `BETTER_AUTH_SECRET` | Better Auth encryption secret (min 32 chars) |
 | `BETTER_AUTH_URL` | Public app URL (e.g. `https://kickaway.win`) |
-| `REDIS_URL` | Redis connection URL for server-side giveaway sessions |
-| `COLLECTOR_MODE` | Local dev only — `embedded` runs the collector inside Next.js. Omit on Coolify when using `Dockerfile.collector`. |
+| `REDIS_URL` | Redis connection URL for giveaway session storage |
 | `NEXT_PUBLIC_DEV_MODE` | When `true`, seeds mock chat entrants during the collecting phase |
 | `NEXT_PUBLIC_DEV_MOCK_ENTRANT_COUNT` | Number of synthetic entrants (default `300`) |
 
@@ -118,9 +115,6 @@ npm run start
 ```bash
 # Web app
 docker build -f Dockerfile -t kickaway-app .
-
-# Chat collector worker
-docker build -f Dockerfile.collector -t kickaway-collector .
 ```
 
 Redis: use Coolify's managed Redis service in production, or `docker compose -f docker-compose.dev.yml up -d redis` locally.

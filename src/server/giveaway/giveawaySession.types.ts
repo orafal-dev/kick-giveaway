@@ -40,15 +40,3 @@ export interface GiveawaySessionState {
 export type GiveawaySessionPatch = Partial<
   Omit<GiveawaySessionState, "sessionId" | "updatedAt">
 >;
-
-export type CollectorCommandType =
-  | "sync"
-  | "connect"
-  | "disconnect"
-  | "stop";
-
-export interface CollectorCommand {
-  type: CollectorCommandType;
-  sessionId: string;
-  issuedAt: number;
-}

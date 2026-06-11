@@ -260,8 +260,9 @@ function App() {
 
         {giveaway.serverUnavailable ? (
           <p className="shrink-0 text-sm text-destructive" role="alert">
-            Server-side giveaway collection is unavailable. Start Redis and the
-            collector process, then reload this page.
+            Giveaway session storage is unavailable. Start Redis, then reload
+            this page. Kick chat is collected in this browser tab while it stays
+            open.
           </p>
         ) : null}
 

@@ -33,6 +33,7 @@ import {
   runGiveawaySessionAction,
   updateGiveawayDrawingDisplay,
 } from "@/services/giveawaySessionApi";
+import { useKickChatCollector } from "@/hooks/useKickChatCollector";
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
 const SETTINGS_SYNC_DEBOUNCE_MS = 400;
@@ -154,6 +155,8 @@ export const useKickGiveaway = (sessionId: string) => {
   const hasTrackedGiveawayStartRef = useRef(false);
   const channelNameRef = useRef(channelName);
   const settingsRef = useRef(settings);
+  const [chatroomId, setChatroomId] = useState<string | null>(null);
+  const [channelId, setChannelId] = useState<string | null>(null);
 
   const stateSetters = useMemo(
     () => ({
@@ -198,9 +201,24 @@ export const useKickGiveaway = (sessionId: string) => {
       applySessionState(stateSetters, mergedState);
       syncedChannelNameRef.current = mergedState.channelName;
       syncedSettingsSnapshotRef.current = serializeSettings(mergedState.settings);
+      setChatroomId(mergedState.chatroomId);
+      setChannelId(mergedState.channelId);
     },
     [stateSetters],
   );
+
+  useKickChatCollector({
+    sessionId,
+    chatroomId,
+    channelId,
+    channelName,
+    connectionStatus,
+    giveawayStarted,
+    isCountdownActive,
+    isServerReady,
+    serverUnavailable,
+    applyServerState,
+  });
 
   const channelLabel = useMemo(
     () => normalizeValue(channelName),
@@ -270,27 +288,6 @@ export const useKickGiveaway = (sessionId: string) => {
         setIsChannelStepComplete(Boolean(state.channelName.trim()));
         setServerUnavailable(false);
         setIsServerReady(true);
-
-        if (
-          state.giveawayStarted ||
-          state.connectionStatus !== "idle" ||
-          Boolean(state.chatroomId)
-        ) {
-          try {
-            const { state: syncedState } = await runGiveawaySessionAction(
-              sessionId,
-              "sync",
-            );
-            if (!cancelled) {
-              applyServerState(syncedState);
-              setIsChannelStepComplete(
-                Boolean(syncedState.channelName.trim()),
-              );
-            }
-          } catch {
-            // Collector will catch up; SSE may deliver updates shortly.
-          }
-        }
       } catch (error) {
         if (cancelled) {
           return;
@@ -300,7 +297,7 @@ export const useKickGiveaway = (sessionId: string) => {
         setErrorMessage(
           error instanceof Error
             ? error.message
-            : "Server-side giveaway is unavailable.",
+            : "Giveaway session storage is unavailable.",
         );
         setIsServerReady(true);
       }

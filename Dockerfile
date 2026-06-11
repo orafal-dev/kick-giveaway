@@ -1,6 +1,5 @@
 # Coolify: deploy as the public web service (port 3000).
-# Set REDIS_URL to your Redis service. Do not set COLLECTOR_MODE here when
-# the chat collector runs as a separate Coolify service (Dockerfile.collector).
+# Set REDIS_URL to your Redis service for giveaway session storage.
 #
 # Build stage
 FROM oven/bun:1-alpine AS build

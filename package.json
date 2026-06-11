@@ -5,8 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
-    "dev:stack": "docker compose -f docker-compose.dev.yml up -d postgres redis && COLLECTOR_MODE=embedded REDIS_URL=redis://127.0.0.1:6379 DATABASE_URL=postgresql://kickaway:kickaway@127.0.0.1:5433/kickaway BETTER_AUTH_SECRET=dev-local-better-auth-secret-min-32-chars BETTER_AUTH_URL=http://localhost:3000 next dev",
-    "collector": "bun run src/collector/index.ts",
+    "dev:stack": "docker compose -f docker-compose.dev.yml up -d postgres redis && REDIS_URL=redis://127.0.0.1:6379 DATABASE_URL=postgresql://kickaway:kickaway@127.0.0.1:5433/kickaway BETTER_AUTH_SECRET=dev-local-better-auth-secret-min-32-chars BETTER_AUTH_URL=http://localhost:3000 next dev",
     "auth:migrate": "npx @better-auth/cli@latest migrate --yes",
     "build": "next build",
     "start": "next start",

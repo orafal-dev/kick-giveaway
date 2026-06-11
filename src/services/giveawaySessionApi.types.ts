@@ -14,7 +14,12 @@ export type GiveawaySessionAction =
   | "confirm"
   | "confetti-complete"
   | "update-drawing-display"
-  | "stop";
+  | "stop"
+  | "chat-message"
+  | "ws-ready"
+  | "ws-disconnected"
+  | "ws-error"
+  | "tick-countdown";
 
 export interface EnsureGiveawaySessionInput {
   sessionId: string;

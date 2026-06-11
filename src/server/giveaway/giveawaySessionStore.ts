@@ -1,7 +1,6 @@
 import type { GiveawaySettings } from "@/giveaway/giveaway.types";
 import {
   GIVEAWAY_ACTIVE_SESSIONS_KEY,
-  GIVEAWAY_COLLECTOR_COMMANDS_CHANNEL,
   giveawaySessionEventsChannel,
   giveawaySessionKey,
 } from "@/server/giveaway/giveawayRedisKeys";
@@ -11,7 +10,6 @@ import {
   touchSessionState,
 } from "@/server/giveaway/giveawaySessionLogic";
 import type {
-  CollectorCommand,
   GiveawaySessionPatch,
   GiveawaySessionState,
 } from "@/server/giveaway/giveawaySession.types";
@@ -41,16 +39,6 @@ export const publishSessionState = async (
   await publisher.publish(
     giveawaySessionEventsChannel(state.sessionId),
     JSON.stringify(state),
-  );
-};
-
-export const publishCollectorCommand = async (
-  command: CollectorCommand,
-): Promise<void> => {
-  const publisher = await getRedisPublisher();
-  await publisher.publish(
-    GIVEAWAY_COLLECTOR_COMMANDS_CHANNEL,
-    JSON.stringify(command),
   );
 };
 
@@ -141,11 +129,6 @@ export const deleteSessionState = async (sessionId: string): Promise<void> => {
   const client = await getRedisCommandClient();
   await client.del(giveawaySessionKey(sessionId));
   await client.sRem(GIVEAWAY_ACTIVE_SESSIONS_KEY, sessionId);
-  await publishCollectorCommand({
-    type: "disconnect",
-    sessionId,
-    issuedAt: Date.now(),
-  });
 };
 
 export const listActiveSessionIds = async (): Promise<string[]> => {
@@ -185,29 +168,3 @@ export const syncSessionSettings = async (
     settings,
     countdownSeconds: settings.confirmTimeSeconds,
   });
-
-export const requestCollectorSync = async (sessionId: string): Promise<void> => {
-  await publishCollectorCommand({
-    type: "sync",
-    sessionId,
-    issuedAt: Date.now(),
-  });
-};
-
-export const requestCollectorConnect = async (
-  sessionId: string,
-): Promise<void> => {
-  await publishCollectorCommand({
-    type: "connect",
-    sessionId,
-    issuedAt: Date.now(),
-  });
-};
-
-export const requestCollectorStop = async (sessionId: string): Promise<void> => {
-  await publishCollectorCommand({
-    type: "stop",
-    sessionId,
-    issuedAt: Date.now(),
-  });
-};
