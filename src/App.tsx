@@ -245,7 +245,7 @@ function App() {
 
       <div
         id="main-content"
-        className="flex min-h-0 w-full flex-1 flex-col gap-4 p-4 md:gap-5 md:p-5"
+        className="flex min-h-0 w-full flex-1 flex-col gap-4 overflow-hidden p-4 md:gap-5 md:p-5"
       >
         <ConnectionStatusBar
           channelName={giveaway.channelName}
@@ -259,14 +259,14 @@ function App() {
         />
 
         {giveaway.serverUnavailable ? (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="shrink-0 text-sm text-destructive" role="alert">
             Server-side giveaway collection is unavailable. Start Redis and the
             collector process, then reload this page.
           </p>
         ) : null}
 
         {giveaway.errorMessage ? (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="shrink-0 text-sm text-destructive" role="alert">
             {giveaway.errorMessage}
           </p>
         ) : null}

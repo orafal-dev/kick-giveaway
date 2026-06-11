@@ -35,7 +35,7 @@ const AppShellLayout = ({ children }: AppShellProps) => {
 
   return (
     <SidebarProvider
-      className="min-h-svh"
+      className="h-svh max-h-svh"
       style={
         {
           "--sidebar-width": useWideSidebar
@@ -45,7 +45,7 @@ const AppShellLayout = ({ children }: AppShellProps) => {
       }
     >
       <AppSidebar />
-      <SidebarInset className="flex min-h-svh flex-col overflow-hidden">
+      <SidebarInset className="flex h-svh max-h-svh flex-col overflow-hidden">
         <header className="sticky top-0 z-10 flex shrink-0 items-center gap-2 border-b bg-background p-4">
           <SidebarTrigger
             className="-ml-1"

@@ -49,7 +49,7 @@ export const ConnectionStatusBar = ({
       : "Idle";
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-card px-4 py-3 md:flex-row md:items-center md:justify-between">
+    <div className="flex shrink-0 flex-col gap-3 rounded-xl border border-border/80 bg-card px-4 py-3 md:flex-row md:items-center md:justify-between">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-2">
         <div className="flex min-w-0 items-center gap-2.5">
           <KickMark />

@@ -125,7 +125,7 @@ export const ParticipantsPanel = ({
   );
 
   return (
-    <Card className="flex h-full min-h-0 flex-col">
+    <Card className="flex h-full max-h-full min-h-0 flex-col overflow-hidden">
       <CardHeader className="flex shrink-0 flex-row flex-wrap items-center justify-between gap-3">
         <CardTitle>Participants ({entrants.length})</CardTitle>
         <div className="flex flex-wrap gap-2">
@@ -146,11 +146,11 @@ export const ParticipantsPanel = ({
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border">
+      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="flex max-h-full min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border">
           <div
             ref={scrollRef}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-2 pe-2.5 text-left text-sm"
+            className="max-h-full min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-2 pe-2.5 text-left text-sm"
             aria-label="Participants"
           >
             {entrants.length === 0 ? (

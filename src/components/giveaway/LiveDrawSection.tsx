@@ -49,15 +49,17 @@ export const LiveDrawSection = ({
   className,
 }: LiveDrawSectionProps) => {
   return (
-    <section className={cn("flex min-h-0 flex-1 flex-col", className)}>
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-2">
+    <section
+      className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}
+    >
+      <header className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">Participants & winners</h2>
         <p className="text-xs text-muted-foreground">
           {entrants.length} entered · {winners.length} won
         </p>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2 lg:items-stretch">
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2 lg:items-stretch [&>*]:min-h-0">
         <ParticipantsPanel
           entrants={entrants}
           drawPoolCount={drawPoolCount}
