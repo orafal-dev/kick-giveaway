@@ -1,9 +1,33 @@
+"use client";
+
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Entrant } from "@/giveaway/giveaway.types";
+
+const PARTICIPANT_ROW_HEIGHT = 36;
+const PARTICIPANT_ROW_GAP = 8;
+
+const ParticipantRow = ({ entrant }: { entrant: Entrant }) => (
+  <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2">
+    <span className="truncate">{entrant.username}</span>
+    <div className="flex shrink-0 gap-1">
+      {entrant.isSubscriber ? (
+        <Badge variant="secondary" className="text-xs">
+          Sub
+        </Badge>
+      ) : null}
+      {entrant.weight > 1 ? (
+        <Badge variant="outline" className="text-xs">
+          {entrant.weight}x
+        </Badge>
+      ) : null}
+    </div>
+  </div>
+);
 
 interface DrawWinnerBlockContext {
   giveawayStarted: boolean;
@@ -66,6 +90,15 @@ export const ParticipantsPanel = ({
   winnersCount,
   onDrawWinner,
 }: ParticipantsPanelProps) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: entrants.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => PARTICIPANT_ROW_HEIGHT,
+    gap: PARTICIPANT_ROW_GAP,
+    overscan: 12,
+  });
+
   const drawWinnerBlockReason = getDrawWinnerBlockReason({
     giveawayStarted,
     drawPoolCount,
@@ -115,41 +148,46 @@ export const ParticipantsPanel = ({
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border">
-          <ScrollArea
-            className="min-h-0 flex-1 p-2"
-            scrollbarGutter
-            scrollFade
+          <div
+            ref={scrollRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-2 pe-2.5 text-left text-sm"
+            aria-label="Participants"
           >
-            <ul className="space-y-2 text-left text-sm">
-              {entrants.map((entrant) => (
-                <li
-                  key={entrant.userId}
-                  className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2"
-                >
-                  <span>{entrant.username}</span>
-                  <div className="flex gap-1">
-                    {entrant.isSubscriber ? (
-                      <Badge variant="secondary" className="text-xs">
-                        Sub
-                      </Badge>
-                    ) : null}
-                    {entrant.weight > 1 ? (
-                      <Badge variant="outline" className="text-xs">
-                        {entrant.weight}x
-                      </Badge>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-              {entrants.length === 0 ? (
-                <li className="px-3 py-2 text-muted-foreground">
-                  {giveawayStarted
-                    ? "No participants yet. Users can enter via chat."
-                    : 'Press "Start Giveaway" to connect to the chat.'}
-                </li>
-              ) : null}
-            </ul>
-          </ScrollArea>
+            {entrants.length === 0 ? (
+              <p className="px-3 py-2 text-muted-foreground">
+                {giveawayStarted
+                  ? "No participants yet. Users can enter via chat."
+                  : 'Press "Start Giveaway" to connect to the chat.'}
+              </p>
+            ) : (
+              <div
+                role="list"
+                className="relative w-full"
+                style={{ height: virtualizer.getTotalSize() }}
+              >
+                {virtualizer.getVirtualItems().map((virtualRow) => {
+                  const entrant = entrants[virtualRow.index];
+                  if (!entrant) {
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      key={entrant.userId}
+                      role="listitem"
+                      className="absolute left-0 top-0 w-full"
+                      style={{
+                        height: virtualRow.size,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      <ParticipantRow entrant={entrant} />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           {drawPoolCount < entrants.length ? (
             <div className="border-t border-border px-3 py-2">
               <p className="text-xs text-muted-foreground">
