@@ -309,7 +309,7 @@ function App() {
           displayName={giveaway.displayName}
           onDisplayChange={giveaway.setDisplayName}
           onComplete={handleAnimationComplete}
-          key={giveaway.drawTarget.userId}
+          key={`draw-${giveaway.drawCount}-${giveaway.drawTarget.userId}`}
         />
       ) : null}
     </>

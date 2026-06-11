@@ -29,10 +29,37 @@ export const IOSPicker = <T,>({
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollRound, setScrollRound] = useState(0);
   const onSettledRef = useRef(onSettled);
+  const onActiveIndexChangeRef = useRef(onActiveIndexChange);
+  const spinStartedRef = useRef(false);
+  const settledRef = useRef(false);
+  const spinGenerationRef = useRef(0);
+  const lastRoundedRef = useRef(0);
+  const lastActiveIndexRef = useRef(0);
+  const spinConfigRef = useRef({
+    duration,
+    loops,
+    winnerIndex,
+    total,
+    items,
+    shouldReduceMotion,
+  });
+
+  spinConfigRef.current = {
+    duration,
+    loops,
+    winnerIndex,
+    total,
+    items,
+    shouldReduceMotion,
+  };
 
   useEffect(() => {
     onSettledRef.current = onSettled;
   }, [onSettled]);
+
+  useEffect(() => {
+    onActiveIndexChangeRef.current = onActiveIndexChange;
+  }, [onActiveIndexChange]);
 
   const virtualIndexes = useMemo(() => {
     const current = scrollRound;
@@ -52,64 +79,99 @@ export const IOSPicker = <T,>({
   useEffect(() => {
     const unsub = position.on("change", (value) => {
       const rounded = Math.round(value);
-      setScrollRound(rounded);
+
+      if (rounded !== lastRoundedRef.current) {
+        lastRoundedRef.current = rounded;
+        setScrollRound(rounded);
+      }
 
       if (total === 0) {
         return;
       }
 
       const idx = ((rounded % total) + total) % total;
+
+      if (idx === lastActiveIndexRef.current) {
+        return;
+      }
+
+      lastActiveIndexRef.current = idx;
       setActiveIndex(idx);
-      onActiveIndexChange?.(idx);
+      onActiveIndexChangeRef.current?.(idx);
     });
 
     return () => unsub();
-  }, [onActiveIndexChange, position, total]);
+  }, [position, total]);
 
   useEffect(() => {
-    if (!spinning || winnerIndex === undefined || total === 0) {
+    if (!spinning) {
+      spinStartedRef.current = false;
+      settledRef.current = false;
+      spinGenerationRef.current += 1;
       return;
     }
 
-    const current = position.get();
-    const normalizedCurrent = ((Math.round(current) % total) + total) % total;
-    let delta = winnerIndex - normalizedCurrent;
-
-    if (delta < 0) {
-      delta += total;
+    if (spinStartedRef.current) {
+      return;
     }
 
-    const target = current + loops * total + delta;
-    const settledItem = items[winnerIndex]!;
-    const settledIndex = winnerIndex;
+    const {
+      duration: spinDuration,
+      loops: spinLoops,
+      winnerIndex: spinWinnerIndex,
+      total: spinTotal,
+      items: spinItems,
+      shouldReduceMotion: reduceMotion,
+    } = spinConfigRef.current;
 
-    if (shouldReduceMotion) {
-      position.set(target);
+    if (spinWinnerIndex === undefined || spinTotal === 0) {
+      return;
+    }
+
+    spinStartedRef.current = true;
+    settledRef.current = false;
+    lastRoundedRef.current = 0;
+    lastActiveIndexRef.current = 0;
+
+    const settledItem = spinItems[spinWinnerIndex]!;
+    const settledIndex = spinWinnerIndex;
+    const spinGeneration = spinGenerationRef.current + 1;
+    spinGenerationRef.current = spinGeneration;
+
+    position.set(0);
+    setScrollRound(0);
+    setActiveIndex(0);
+
+    const target = spinLoops * spinTotal + spinWinnerIndex;
+
+    const finishSpin = (): void => {
+      if (spinGeneration !== spinGenerationRef.current || settledRef.current) {
+        return;
+      }
+
+      settledRef.current = true;
       onSettledRef.current?.(settledItem, settledIndex);
+    };
+
+    if (reduceMotion) {
+      position.set(target);
+      finishSpin();
       return;
     }
 
     const controls = animate(position, target, {
       type: "tween",
-      duration,
+      duration: spinDuration,
       ease: wheelSpinEaseOut,
     });
 
-    void controls.finished.then(() => {
-      onSettledRef.current?.(settledItem, settledIndex);
-    });
+    void controls.finished.then(finishSpin);
 
-    return () => controls.stop();
-  }, [
-    duration,
-    items,
-    loops,
-    position,
-    shouldReduceMotion,
-    spinning,
-    total,
-    winnerIndex,
-  ]);
+    return () => {
+      spinGenerationRef.current += 1;
+      controls.stop();
+    };
+  }, [position, spinning]);
 
   if (total === 0) {
     return null;

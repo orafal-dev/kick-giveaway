@@ -79,12 +79,22 @@ export const WheelPickerDrawAnimation = ({
     return clearHoldTimeout;
   }, [clearHoldTimeout]);
 
+  const lastDisplayedUsernameRef = useRef("");
+
   const handleActiveIndexChange = useCallback(
     (barrelIndex: number) => {
       const slot = barrel[barrelIndex];
-      if (slot) {
-        onDisplayChange(slot.entrant.username);
+      if (!slot) {
+        return;
       }
+
+      const { username } = slot.entrant;
+      if (username === lastDisplayedUsernameRef.current) {
+        return;
+      }
+
+      lastDisplayedUsernameRef.current = username;
+      onDisplayChange(username);
     },
     [barrel, onDisplayChange],
   );
