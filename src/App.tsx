@@ -278,8 +278,7 @@ function App() {
           drawPoolCount={giveaway.drawPool.length}
           giveawayStarted={giveaway.giveawayStarted}
           isDrawing={giveaway.isDrawing}
-          winnersTargetReached={giveaway.winnersTargetReached}
-          winnersCount={giveaway.settings.winnersCount}
+          canRerollDraw={giveaway.canRerollDraw}
           onDrawWinner={giveaway.handleDrawWinner}
           winners={giveaway.winners}
           displayName={giveaway.displayName}

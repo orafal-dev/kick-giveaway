@@ -234,6 +234,8 @@ export const useKickGiveaway = (sessionId: string) => {
   );
   const winnersTargetReached =
     acceptedWinnersCount >= settings.winnersCount;
+  const canRerollDraw =
+    winnersTargetReached || pendingWinner !== null;
 
   useEffect(() => {
     channelNameRef.current = channelName;
@@ -605,7 +607,7 @@ export const useKickGiveaway = (sessionId: string) => {
     isCountdownActive,
     giveawayStarted,
     drawPool,
-    winnersTargetReached,
+    canRerollDraw,
     channelLabel,
     handleStartGiveaway,
     handleChannelLandingSubmit,

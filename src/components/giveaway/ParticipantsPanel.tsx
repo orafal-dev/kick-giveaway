@@ -34,8 +34,7 @@ interface DrawWinnerBlockContext {
   drawPoolCount: number;
   entrantsCount: number;
   isDrawing: boolean;
-  winnersTargetReached: boolean;
-  winnersCount: number;
+  canRerollDraw: boolean;
 }
 
 const getDrawWinnerBlockReason = ({
@@ -43,8 +42,7 @@ const getDrawWinnerBlockReason = ({
   drawPoolCount,
   entrantsCount,
   isDrawing,
-  winnersTargetReached,
-  winnersCount,
+  canRerollDraw,
 }: DrawWinnerBlockContext): string | null => {
   if (!giveawayStarted) {
     return "Start the giveaway before drawing a winner.";
@@ -54,13 +52,7 @@ const getDrawWinnerBlockReason = ({
     return "A draw is already in progress.";
   }
 
-  if (winnersTargetReached) {
-    return winnersCount === 1
-      ? "An accepted winner has already been selected."
-      : `All ${winnersCount} accepted winners have been selected.`;
-  }
-
-  if (drawPoolCount === 0) {
+  if (drawPoolCount === 0 && !canRerollDraw) {
     if (entrantsCount === 0) {
       return "No participants yet. Users can enter via chat.";
     }
@@ -76,8 +68,7 @@ interface ParticipantsPanelProps {
   drawPoolCount: number;
   giveawayStarted: boolean;
   isDrawing: boolean;
-  winnersTargetReached: boolean;
-  winnersCount: number;
+  canRerollDraw: boolean;
   onDrawWinner: () => void;
 }
 
@@ -86,8 +77,7 @@ export const ParticipantsPanel = ({
   drawPoolCount,
   giveawayStarted,
   isDrawing,
-  winnersTargetReached,
-  winnersCount,
+  canRerollDraw,
   onDrawWinner,
 }: ParticipantsPanelProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -104,8 +94,7 @@ export const ParticipantsPanel = ({
     drawPoolCount,
     entrantsCount: entrants.length,
     isDrawing,
-    winnersTargetReached,
-    winnersCount,
+    canRerollDraw,
   });
   const isDrawWinnerDisabled = drawWinnerBlockReason !== null;
 

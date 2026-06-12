@@ -310,16 +310,75 @@ export const getWinnerChatCapture = (
   );
 };
 
+const getLastAcceptedWinner = (
+  winners: GiveawaySessionState["winners"],
+): GiveawaySessionState["winners"][number] | null => {
+  const acceptedWinners = winners.filter((winner) => !winner.noShow);
+  if (acceptedWinners.length === 0) {
+    return null;
+  }
+
+  return acceptedWinners.reduce((latest, winner) =>
+    winner.drawIndex > latest.drawIndex ? winner : latest,
+  );
+};
+
+export const revertLastAcceptedWinner = (
+  state: GiveawaySessionState,
+): GiveawaySessionState => {
+  const lastAccepted = getLastAcceptedWinner(state.winners);
+  if (!lastAccepted) {
+    return {
+      ...state,
+      phase: state.giveawayStarted ? "collecting" : state.phase,
+      displayName: "",
+      showConfetti: false,
+    };
+  }
+
+  return {
+    ...state,
+    winners: state.winners.filter(
+      (winner) => winner.drawIndex !== lastAccepted.drawIndex,
+    ),
+    phase: "collecting",
+    displayName: "",
+    showConfetti: false,
+  };
+};
+
+export const prepareRerollDrawState = (
+  state: GiveawaySessionState,
+): GiveawaySessionState => {
+  let nextState = state;
+
+  if (nextState.pendingWinner) {
+    nextState = {
+      ...clearPendingWinnerState(nextState),
+      displayName: "",
+      showConfetti: false,
+      phase: nextState.giveawayStarted ? "collecting" : nextState.phase,
+    };
+  }
+
+  if (isWinnersTargetReached(nextState)) {
+    nextState = revertLastAcceptedWinner(nextState);
+  }
+
+  return nextState;
+};
+
 export const startDrawInState = (
   state: GiveawaySessionState,
 ): GiveawaySessionState | null => {
-  const drawPool = getDrawPool(state);
+  if (state.isDrawing) {
+    return null;
+  }
 
-  if (
-    drawPool.length === 0 ||
-    state.isDrawing ||
-    isWinnersTargetReached(state)
-  ) {
+  const preparedState = prepareRerollDrawState(state);
+  const drawPool = getDrawPool(preparedState);
+
+  if (drawPool.length === 0) {
     return null;
   }
 
@@ -329,7 +388,7 @@ export const startDrawInState = (
   }
 
   return {
-    ...state,
+    ...preparedState,
     drawTarget: winner,
     isDrawing: true,
     phase: "drawing",

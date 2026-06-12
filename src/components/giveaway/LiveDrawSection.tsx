@@ -14,8 +14,7 @@ interface LiveDrawSectionProps {
   drawPoolCount: number;
   giveawayStarted: boolean;
   isDrawing: boolean;
-  winnersTargetReached: boolean;
-  winnersCount: number;
+  canRerollDraw: boolean;
   onDrawWinner: () => void;
   winners: WinnerRecord[];
   displayName: string;
@@ -34,8 +33,7 @@ export const LiveDrawSection = ({
   drawPoolCount,
   giveawayStarted,
   isDrawing,
-  winnersTargetReached,
-  winnersCount,
+  canRerollDraw,
   onDrawWinner,
   winners,
   displayName,
@@ -65,8 +63,7 @@ export const LiveDrawSection = ({
           drawPoolCount={drawPoolCount}
           giveawayStarted={giveawayStarted}
           isDrawing={isDrawing}
-          winnersTargetReached={winnersTargetReached}
-          winnersCount={winnersCount}
+          canRerollDraw={canRerollDraw}
           onDrawWinner={onDrawWinner}
         />
         <WinnersPanel
